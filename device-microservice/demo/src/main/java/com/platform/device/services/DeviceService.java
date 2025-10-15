@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @Service
 public class DeviceService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DeviceService.class);
 
     @Autowired
     private DeviceRepository deviceRepository;

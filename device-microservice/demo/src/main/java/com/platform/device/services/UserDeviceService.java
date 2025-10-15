@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Service
 public class UserDeviceService {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserDeviceService.class);
 
     @Autowired
     private UserDeviceRepository userDeviceRepository;
