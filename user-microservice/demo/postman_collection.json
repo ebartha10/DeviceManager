@@ -1,0 +1,117 @@
+{
+  "info": {
+    "name": "USER SERVICE API",
+    "_postman_id": "e8a3c5a1-9ad4-4fa0-8a88-user-demo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "resource", "value": "users" },
+    { "key": "userId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "GET – Get all users (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/{{resource}}/get-all", "host": ["{{baseUrl}}"], "path": ["{{resource}}", "get-all"] }
+      }
+    },
+    {
+      "name": "POST – Create user (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"fullName\": \"John Doe\",\n  \"email\": \"john@example.com\"\n  }"
+        },
+        "url": { "raw": "{{baseUrl}}/{{resource}}", "host": ["{{baseUrl}}"], "path": ["{{resource}}"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Created', () => pm.response.to.have.status(201));",
+              "let id = null;",
+              "const loc = pm.response.headers.get('Location');",
+              "if (loc) { id = loc.split('?')[1]?.split('=')[1]; }",
+              "else {",
+              "  try {",
+              "    const body = pm.response.json();",
+              "    if (body && body.id) id = body.id;",
+              "  } catch(e) {}",
+              "}",
+              "pm.expect(id, 'Extracted userId').to.be.ok;",
+              "pm.collectionVariables.set('userId', id);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "GET – Get user by ID (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}?id={{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}"],
+          "query": [{ "key": "id", "value": "{{userId}}" }]
+        }
+      }
+    },
+    {
+      "name": "GET – Invalid UUID (400)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}?id=not-a-uuid",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}"],
+          "query": [{ "key": "id", "value": "not-a-uuid" }]
+        }
+      }
+    },
+    {
+      "name": "PUT – Update user (202)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{userId}}\",\n  \"name\": \"Johnathan Doe\",\n  \"email\": \"johnathan@example.com\",\n  \"password\": \"newSecret123\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/{{resource}}", "host": ["{{baseUrl}}"], "path": ["{{resource}}"] }
+      }
+    },
+    {
+      "name": "DELETE – Remove user (200)",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}?id={{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}"],
+          "query": [{ "key": "id", "value": "{{userId}}" }]
+        }
+      }
+    },
+    {
+      "name": "DELETE – Not found (404)",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}?id=aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}"],
+          "query": [{ "key": "id", "value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa" }]
+        }
+      }
+    }
+  ]
+}
