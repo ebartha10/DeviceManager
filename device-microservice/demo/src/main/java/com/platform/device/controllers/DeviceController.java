@@ -65,6 +65,7 @@ public class DeviceController {
 
     @PostMapping("user-device")
     @ResponseBody
+    // DTO only contains userId and deviceId
     public UserDeviceDTO addDeviceForUser(@RequestBody UserDeviceDTO userDeviceDTO){
         return this.userDeviceService.createUserDevice(userDeviceDTO);
     }
@@ -76,4 +77,11 @@ public class DeviceController {
         return ResponseEntity.ok("Deletion Successful");
     }
 
+    // GET DEVICE FOR USER
+    @GetMapping("user-device")
+    @ResponseBody
+    public ResponseEntity<List<DeviceDTO>> getDevicesForUser(@RequestParam UUID userId){
+        List<DeviceDTO> devices = this.userDeviceService.getDevicesForUser(userId);
+        return ResponseEntity.ok(devices);
+    }
 }

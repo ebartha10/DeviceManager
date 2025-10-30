@@ -1,0 +1,92 @@
+services:
+   db-device:
+    image: postgres
+    container_name: db-device
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: device-microservice
+    ports:
+      - "5433:5432"
+    volumes:
+      - my-db-device:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
+   db-user:
+    image: postgres
+    container_name: db-user
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: user-microservice
+    ports:
+      - "5434:5432"
+    volumes:
+      - my-db-user:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
+   device-microservice:
+    image: device-microservice
+    container_name: device-microservice
+    environment:
+      - DB_IP=db-device
+      - DB_PORT=5432
+      - DB_DBNAME=device-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.device.rule=Host(`device.localhost`) || PathPrefix(`/device`)"
+      - "traefik.http.routers.device.entrypoints=web"
+      - "traefik.http.services.device.loadbalancer.server.port=8080"
+    networks:
+      - demo_net
+
+   user-microservice:
+    image: user-microservice
+    container_name: user-microservice
+    environment:
+      - DB_IP=db-user
+      - DB_PORT=5432
+      - DB_DBNAME=user-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user.rule=Host(`users.localhost`) || PathPrefix(`/users`)"
+      - "traefik.http.routers.user.entrypoints=web"
+      - "traefik.http.services.user.loadbalancer.server.port=8080"
+    networks:
+      - demo_net
+
+   traefik:
+    image: traefik:v3.0
+    container_name: traefik
+    restart: always
+    ports:
+      - "80:80" # The HTTP port
+      - "8080:8080" # Dashboard port
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro" # Traefik can listen to the Docker events
+      - "./traefik.yml:/etc/traefik/traefik.yml:ro" # Static configuration file
+      - "./dynamic:/etc/traefik/dynamic:ro" # Dynamic configuration files
+      - "./logs:/var/log/traefik" # Log files
+    develop: # Enable live reload of dynamic configuration files on Windows, if using Unix based system needs to be commented out
+      watch:
+       - path: ./dynamic                   # watch the whole folder
+         action: restart
+    networks:
+      - demo_net
+  
+
+volumes:
+  my-db-device:
+  my-db-user:
+
+networks:
+  demo_net:
+    driver: bridge

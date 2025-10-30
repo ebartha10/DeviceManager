@@ -24,11 +24,4 @@ public class UserDevice {
     @ManyToOne
     @JoinColumn(name = "device_id", insertable = false, updatable = false)
     private Device device;
-
-    @Column(name = "device_name")
-    private String deviceName;
-
-    @Column(name = "serial_number", unique = true)
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private String serialNumber;
 }

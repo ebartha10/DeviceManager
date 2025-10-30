@@ -1,0 +1,23 @@
+# Traefik static configuration
+api:
+  dashboard: true
+  insecure: true
+
+entryPoints:
+  web:
+    address: ":80"
+  #websecure:
+    #address: ":443"
+
+providers:
+  docker:
+    exposedByDefault: false
+    network: demo_net
+  file:
+    filename: /etc/traefik/dynamic/path.yml
+    watch: true
+
+log:
+  level: INFO
+
+accessLog: {}

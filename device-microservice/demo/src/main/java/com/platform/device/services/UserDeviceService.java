@@ -29,6 +29,9 @@ public class UserDeviceService {
     @Autowired
     private DeviceRepository deviceRepository;
 
+    @Autowired
+    private UserService userService;
+
     public List<DeviceDTO> getDevicesForUser(UUID givenUserId) {
         return this.userDeviceRepository.findByIdUserId(givenUserId)
                 .stream()
@@ -37,13 +40,16 @@ public class UserDeviceService {
     }
 
     public UserDeviceDTO createUserDevice(UserDeviceDTO userDeviceDTO) {
-        Optional<Device> device = this.deviceRepository.findById(userDeviceDTO.getDevice().getId());
+        // Validate user exists locally, or fetch from user microservice and cache
+        this.userService.getUserById(userDeviceDTO.getUserId());
+
+        Optional<Device> device = this.deviceRepository.findById(userDeviceDTO.getDeviceId());
         if(device.isEmpty()) {
             LOGGER.error("Device with id {} was not found in db", userDeviceDTO.getUserId());
             throw new ResourceNotFoundException(Device.class.getSimpleName() + " with id: " + userDeviceDTO.getUserId());
         }
 
-        UserDevice newUserDevice = UserDeviceBuilder.toEntity(userDeviceDTO);
+        UserDevice newUserDevice = UserDeviceBuilder.toEntity(userDeviceDTO, device.get());
 
         newUserDevice = this.userDeviceRepository.save(newUserDevice);
         LOGGER.debug("UserDevice with userId {} and deviceId {} was inserted in db", newUserDevice.getId().getUserId(), newUserDevice.getId().getDeviceId());

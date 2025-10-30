@@ -1,0 +1,46 @@
+http:
+  # Define URL routing rules, middlewares, and services
+  routers:
+
+    device-api:
+      rule: "Host(`localhost`) && PathPrefix(`/device`)" # Match requests to localhost with /device prefix
+      entryPoints:
+        - web # Listen on the web (HTTP) entry point
+      middlewares:
+        - strip-device-prefix # Remove /device prefix before forwarding
+      service: device-service
+
+    user-api:
+      rule: "Host(`localhost`) && PathPrefix(`/users`)" # Match requests to localhost with /users prefix
+      entryPoints:
+        - web # Listen on the web (HTTP) entry point
+      middlewares:
+        - strip-user-prefix # Remove /users prefix before forwarding
+      service: user-service
+
+  middlewares:
+    strip-device-prefix: # Middleware to remove /device prefix
+      stripPrefix: 
+        prefixes:
+          - "/device"
+
+    strip-user-prefix: # Middleware to remove /users prefix
+      stripPrefix: 
+        prefixes:
+          - "/users"
+    auth-basic: # Middleware for basic authentication
+      basicAuth:
+        users:
+          - "user:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/" # password = "test"
+
+
+  services:
+    device-service:
+      loadBalancer:
+        servers:
+          - url: "http://device-microservice:8080" # Device microservice container
+
+    user-service:
+      loadBalancer:
+        servers:
+          - url: "http://user-microservice:8080" # User microservice container

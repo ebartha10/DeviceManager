@@ -1,8 +1,5 @@
 package com.platform.device.dtos;
 
-import com.platform.device.entities.Device;
-import com.platform.device.entities.primaryKeys.UserDeviceId;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,9 +11,7 @@ import java.util.UUID;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDeviceDTO {
+public class UserDTO {
 
-    private UUID userId;
-
-    private UUID deviceId;
+    private UUID id;
 }

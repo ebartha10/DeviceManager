@@ -9,9 +9,12 @@ import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +24,12 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Value("${device-microservice.base-url}")
+    private String deviceServiceBaseUrl;
 
     public List<UserDTO> getAllUsers() {
         List<User> users = (List<User>) this.userRepository.findAll();
@@ -41,6 +50,14 @@ public class UserService {
         User newUser = UserBuilder.toUserEntity(user);
         newUser = this.userRepository.save(newUser);
         LOGGER.debug("User with id {} was inserted in db", newUser.getId());
+        
+        try {
+            String url = this.deviceServiceBaseUrl + "/users";
+            Map<String, Object> body = Map.of("id", newUser.getId());
+            this.restTemplate.postForLocation(url, body);
+        } catch (Exception ex) {
+            LOGGER.warn("Failed to propagate user {} to device microservice: {}", newUser.getId(), ex.getMessage());
+        }
         return UserBuilder.fromPersistance(newUser);
     }
 
