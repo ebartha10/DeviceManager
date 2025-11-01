@@ -47,18 +47,32 @@ public class UserService {
     }
 
     public UserDTO createUser(UserDTO user) {
-        User newUser = UserBuilder.toUserEntity(user);
-        newUser = this.userRepository.save(newUser);
-        LOGGER.debug("User with id {} was inserted in db", newUser.getId());
+        // Check if user already exists (idempotent create)
+        Optional<User> existingUser = this.userRepository.findById(user.getId());
+        
+        User savedUser;
+        if (existingUser.isPresent()) {
+            // User already exists, update it instead of creating new one
+            User userToUpdate = existingUser.get();
+            userToUpdate.setFullName(user.getFullName());
+            userToUpdate.setEmail(user.getEmail());
+            savedUser = this.userRepository.save(userToUpdate);
+            LOGGER.debug("User with id {} was updated in db", savedUser.getId());
+        } else {
+            // New user, create it
+            User newUser = UserBuilder.toUserEntity(user);
+            savedUser = this.userRepository.save(newUser);
+            LOGGER.debug("User with id {} was inserted in db", savedUser.getId());
+        }
         
         try {
             String url = this.deviceServiceBaseUrl + "/users";
-            Map<String, Object> body = Map.of("id", newUser.getId());
+            Map<String, Object> body = Map.of("id", savedUser.getId());
             this.restTemplate.postForLocation(url, body);
         } catch (Exception ex) {
-            LOGGER.warn("Failed to propagate user {} to device microservice: {}", newUser.getId(), ex.getMessage());
+            LOGGER.warn("Failed to propagate user {} to device microservice: {}", savedUser.getId(), ex.getMessage());
         }
-        return UserBuilder.fromPersistance(newUser);
+        return UserBuilder.fromPersistance(savedUser);
     }
 
     public UserDTO updateUser(UserDTO givenUser) {
