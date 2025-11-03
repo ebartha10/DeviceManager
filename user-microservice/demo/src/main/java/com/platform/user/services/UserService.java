@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -66,9 +68,23 @@ public class UserService {
         }
         
         try {
-            String url = this.deviceServiceBaseUrl + "/users";
-            Map<String, Object> body = Map.of("id", savedUser.getId());
-            this.restTemplate.postForLocation(url, body);
+            String url = deviceServiceBaseUrl + "/users";
+
+            // Set headers properly using HttpHeaders
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-User-Id", user.getId().toString());
+            headers.set("X-User-Role", "ADMIN");
+
+            // Create request body
+            Map<String, Object> body = Map.of(
+                    "id", user.getId()
+            );
+
+            // Create HttpEntity with headers and body
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // Make POST request with proper headers
+            restTemplate.postForLocation(url, requestEntity);
         } catch (Exception ex) {
             LOGGER.warn("Failed to propagate user {} to device microservice: {}", savedUser.getId(), ex.getMessage());
         }

@@ -16,6 +16,7 @@ export interface RegisterRequest {
 export interface AuthenticationResponse {
   token: string;
   userId: string;
+  role: string;
 }
 
 export const authApi = {

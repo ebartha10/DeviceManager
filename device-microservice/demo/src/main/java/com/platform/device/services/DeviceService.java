@@ -45,7 +45,7 @@ public class DeviceService {
         return DeviceBuilder.fromPersistance(newDevice);
     }
 
-    public DeviceDTO updateUser(DeviceDTO givenDevice) {
+    public DeviceDTO updateDevice(DeviceDTO givenDevice) {
         Optional<Device> device = this.deviceRepository.findById(givenDevice.getId());
         if(device.isEmpty()) {
             LOGGER.error("Device with id {} was not found in db", givenDevice.getId());

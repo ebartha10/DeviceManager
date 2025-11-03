@@ -17,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -59,7 +61,7 @@ public class UserService {
         
         String jwtToken = generateTokenForUser(savedUser);
         
-        return buildAuthenticationResponse(jwtToken, savedUser.getId());
+        return buildAuthenticationResponse(jwtToken, savedUser.getId(), user.getRole());
     }
 
     public AuthenticationResponseDTO authenticate(AuthenticationRequestDTO request) {
@@ -73,7 +75,7 @@ public class UserService {
         User user = findUserByEmail(request.getEmail());
         String jwtToken = generateTokenForUser(user);
 
-        return buildAuthenticationResponse(jwtToken, user.getId());
+        return buildAuthenticationResponse(jwtToken, user.getId(), user.getRole());
     }
 
     private void validateEmailNotExists(String email) {
@@ -106,14 +108,26 @@ public class UserService {
     private void propagateUserToUserMicroservice(User user, String fullName) {
         try {
             String url = userServiceBaseUrl + "/users";
+            
+            // Set headers properly using HttpHeaders
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-User-Id", user.getId().toString());
+            headers.set("X-User-Role", "ADMIN");
+            
+            // Create request body
             Map<String, Object> body = Map.of(
                     "id", user.getId(),
                     "email", user.getEmail(),
                     "fullName", fullName != null ? fullName : ""
             );
-            restTemplate.postForLocation(url, body);
+            
+            // Create HttpEntity with headers and body
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            
+            // Make POST request with proper headers
+            restTemplate.postForLocation(url, requestEntity);
         } catch (Exception ex) {
-            LOGGER.warn("Failed to propagate user {} to device microservice: {}", 
+            LOGGER.warn("Failed to propagate user {} to user microservice: {}", 
                     user.getId(), ex.getMessage());
         }
     }
@@ -131,10 +145,11 @@ public class UserService {
                 .orElseThrow(() -> new EntityNotFoundException("User not found with email: " + email));
     }
 
-    private AuthenticationResponseDTO buildAuthenticationResponse(String token, UUID userId) {
+    private AuthenticationResponseDTO buildAuthenticationResponse(String token, UUID userId, Role role) {
         return AuthenticationResponseDTO.builder()
                 .token(token)
                 .userId(userId)
+                .role(role.toString())
                 .build();
     }
 }

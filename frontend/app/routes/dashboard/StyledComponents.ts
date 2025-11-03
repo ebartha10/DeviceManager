@@ -641,3 +641,25 @@ export const DeviceDetailsText = styled(Typography)({
   marginBottom: "4px",
 });
 
+// Logout button
+export const LogoutButton = styled(Button)({
+  background: "transparent",
+  color: "#ff00ff",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  padding: "12px 16px",
+  borderRadius: "8px",
+  border: "1px solid #ff00ff",
+  marginTop: "auto",
+  "&:hover": {
+    background: "rgba(255, 0, 255, 0.1)",
+    border: "1px solid #ff00ff",
+    boxShadow: "0 0 15px rgba(255, 0, 255, 0.5)",
+  },
+  "& .MuiButton-startIcon": {
+    marginRight: "8px",
+  },
+});
+

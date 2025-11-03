@@ -34,20 +34,8 @@ public class UserService {
         Optional<User> user = this.userRepository.findById(id);
 
         if(user.isEmpty()) {
-            try {
-                String url = this.userServiceBaseUrl + "/users?id=" + id;
-                UserDTO remoteUser = this.restTemplate.getForObject(url, UserDTO.class);
-                if (remoteUser == null || remoteUser.getId() == null) {
-                    LOGGER.error("User microservice returned no user for id {}", id);
-                    throw new ResourceNotFoundException(User.class.getSimpleName() + " with id: " + id);
-                }
-
-                this.userRepository.save(new User(remoteUser.getId()));
-                return remoteUser;
-            } catch (HttpClientErrorException.NotFound ex) {
-                LOGGER.error("User with id {} not found in user microservice", id);
-                throw new ResourceNotFoundException(User.class.getSimpleName() + " with id: " + id);
-            }
+            LOGGER.error("User with id {} not found in user microservice", id);
+            throw new ResourceNotFoundException(User.class.getSimpleName() + " with id: " + id);
         }
 
         return UserBuilder.fromPersistence(user.get());

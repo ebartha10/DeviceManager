@@ -2,12 +2,32 @@ http:
   # Define URL routing rules, middlewares, and services
   routers:
 
+    # OPTIONS requests for CORS preflight - must be before other routes
+    device-api-options:
+      rule: "Host(`localhost`) && PathPrefix(`/device`) && Method(`OPTIONS`)"
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+      service: device-service
+      priority: 10
+
+    user-api-options:
+      rule: "Host(`localhost`) && PathPrefix(`/users`) && Method(`OPTIONS`)"
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+      service: user-service
+      priority: 10
+
     device-api:
       rule: "Host(`localhost`) && PathPrefix(`/device`)" # Match requests to localhost with /device prefix
       entryPoints:
         - web # Listen on the web (HTTP) entry point
       middlewares:
-        - strip-device-prefix # Remove /device prefix before forwarding
+        - cors-headers # Add CORS headers
+        - auth-forward # Validate JWT via auth service and forward headers
       service: device-service
 
     user-api:
@@ -15,8 +35,34 @@ http:
       entryPoints:
         - web # Listen on the web (HTTP) entry point
       middlewares:
+        - cors-headers # Add CORS headers
+        - auth-forward # Validate JWT via auth service and forward headers
+      service: user-service
+
+    user-api-internal:
+      rule: "Host(`user-microservice`) && PathPrefix(`/users`)" # Internal service-to-service calls
+      entryPoints:
+        - web # Listen on the web (HTTP) entry point
+      middlewares:
         - strip-user-prefix # Remove /users prefix before forwarding
       service: user-service
+
+    device-api-internal:
+      rule: "Host(`device-microservice`) && PathPrefix(`/users`)" # Internal service-to-service calls for device service
+      entryPoints:
+        - web # Listen on the web (HTTP) entry point
+      middlewares:
+        - strip-device-user-prefix # Remove /users prefix for internal device calls
+      service: device-service
+
+    auth-api:
+      rule: "Host(`localhost`) && PathPrefix(`/api/auth`)" # Match requests to localhost with /api/auth prefix
+      entryPoints:
+        - web # Listen on the web (HTTP) entry point
+      middlewares:
+        - cors-headers # Add CORS headers
+      # Don't strip prefix - auth service expects full /api/auth path
+      service: auth-service
 
   middlewares:
     strip-device-prefix: # Middleware to remove /device prefix
@@ -28,10 +74,48 @@ http:
       stripPrefix: 
         prefixes:
           - "/users"
+
+    strip-device-user-prefix: # Middleware to remove /users prefix for device service internal calls
+      stripPrefix:
+        prefixes:
+          - "/users"
+
+    strip-auth-prefix: # Middleware to remove /api/auth prefix
+      stripPrefix:
+        prefixes:
+          - "/api/auth"
+
+    auth-forward: # Middleware to validate JWT via auth service and forward headers
+      forwardAuth:
+        address: "http://auth-microservice:8080/api/auth/validate"
+        authRequestHeaders:
+          - "Authorization"
+        authResponseHeaders:
+          - "X-User-Id"
+          - "X-User-Role"
+
     auth-basic: # Middleware for basic authentication
       basicAuth:
         users:
           - "user:$apr1$H6uskkkW$IgXLP6ewTrSuBkTrqE8wj/" # password = "test"
+
+    cors-headers: # Middleware to add CORS headers
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        accessControlAllowOriginList:
+          - "http://localhost:5173"
+          - "http://localhost:3000"
+          - "http://localhost"
+        accessControlAllowHeaders:
+          - "*"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 3600
+        addVaryHeader: true
 
 
   services:
@@ -44,3 +128,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://user-microservice:8080" # User microservice container
+
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth-microservice:8080" # Auth microservice container

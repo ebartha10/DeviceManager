@@ -25,6 +25,7 @@ export const PageContainer = styled(Box)({
 // Container wrapper
 export const ContainerWrapper = styled(Container)({
   maxWidth: "sm",
+  display: "contents",
 });
 
 // Gradient border wrapper

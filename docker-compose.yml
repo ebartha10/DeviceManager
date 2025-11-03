@@ -29,6 +29,21 @@ services:
     networks:
       - demo_net
 
+   db-auth:
+    image: postgres
+    container_name: db-auth
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: auth-microservice
+    ports:
+      - "5435:5432"
+    volumes:
+      - my-db-auth:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
    device-microservice:
     image: device-microservice
     container_name: device-microservice
@@ -38,11 +53,7 @@ services:
       - DB_DBNAME=device-microservice
       - DB_USER=postgres
       - DB_PASSWORD=admin
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.device.rule=Host(`device.localhost`) || PathPrefix(`/device`)"
-      - "traefik.http.routers.device.entrypoints=web"
-      - "traefik.http.services.device.loadbalancer.server.port=8080"
+    # Traefik labels removed - using dynamic file config instead (dynamic/path.yml)
     networks:
       - demo_net
 
@@ -55,11 +66,49 @@ services:
       - DB_DBNAME=user-microservice
       - DB_USER=postgres
       - DB_PASSWORD=admin
+      - DEVICE_MS_BASE_URL=http://device-microservice:8080
+    # Traefik labels removed - using dynamic file config instead (dynamic/path.yml)
+    networks:
+      - demo_net
+
+   auth-microservice:
+    build:
+      context: ./auth-microservice/demo
+      dockerfile: Dockerfile
+    image: auth-microservice
+    container_name: auth-microservice
+    environment:
+      - DB_IP=db-auth
+      - DB_PORT=5432
+      - DB_DBNAME=auth-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - PORT=8080
+      - DEVICE_MS_BASE_URL=http://device-microservice:8080
+      - USER_MICROSERVICE_BASE_URL=http://user-microservice:8080
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.user.rule=Host(`users.localhost`) || PathPrefix(`/users`)"
-      - "traefik.http.routers.user.entrypoints=web"
-      - "traefik.http.services.user.loadbalancer.server.port=8080"
+      - "traefik.http.routers.auth.rule=Host(`localhost`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=8080"
+    networks:
+      - demo_net
+    depends_on:
+      - db-auth
+
+   frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend
+    container_name: frontend
+    environment:
+      - VITE_API_BASE_URL=http://localhost
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`) && !PathPrefix(`/api/auth`) && !PathPrefix(`/users`) && !PathPrefix(`/device`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     networks:
       - demo_net
 
@@ -86,6 +135,7 @@ services:
 volumes:
   my-db-device:
   my-db-user:
+  my-db-auth:
 
 networks:
   demo_net:

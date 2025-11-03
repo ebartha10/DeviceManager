@@ -14,4 +14,5 @@ import java.util.UUID;
 public class AuthenticationResponseDTO {
     private String token;
     private UUID userId;
+    private String role;
 }

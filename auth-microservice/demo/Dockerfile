@@ -4,15 +4,15 @@ ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 ENV CATALINA_OPTS="-Duser.timezone=UTC"
 
-COPY ./pom.xml /user-microservice/pom.xml
-WORKDIR /user-microservice
+COPY ./pom.xml /auth-microservice/pom.xml
+WORKDIR /auth-microservice
 RUN mvn dependency:go-offline
-COPY ./src/ /user-microservice/src
-WORKDIR /user-microservice
+COPY ./src/ /auth-microservice/src
+WORKDIR /auth-microservice
 RUN mvn clean install -DskipTests
 
 FROM openjdk:21-jdk
-WORKDIR /user-microservice
-COPY --from=build /user-microservice/target/demo-0.0.1-SNAPSHOT.jar /user-microservice/demo.jar
+WORKDIR /auth-microservice
+COPY --from=build /auth-microservice/target/demo-0.0.1-SNAPSHOT.jar /auth-microservice/demo.jar
 EXPOSE 8080
 CMD ["java", "-jar", "demo.jar"]

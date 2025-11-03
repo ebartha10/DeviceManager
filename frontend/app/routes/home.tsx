@@ -1,13 +1,16 @@
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import HomeComponent from "./home/home";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
+    { title: "NEXUS - Device Management Platform" },
+    {
+      name: "description",
+      content: "NEXUS - Secure and efficient device management platform",
+    },
   ];
 }
 
 export default function Home() {
-  return <Welcome />;
+  return <HomeComponent />;
 }

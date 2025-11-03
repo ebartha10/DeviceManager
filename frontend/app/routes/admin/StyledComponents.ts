@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Autocomplete,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router";
 
@@ -282,6 +283,7 @@ export const SummaryCardsContainer = styled(Box)({
   gridTemplateColumns: "repeat(4, 1fr)",
   gap: "16px",
   marginBottom: "32px",
+  
 });
 
 // Summary card
@@ -610,6 +612,7 @@ export const StyledDialogContent = styled(DialogContent)({
   display: "flex",
   flexDirection: "column",
   gap: "16px",
+  marginTop: "12px",
 });
 
 // Dialog actions
@@ -683,5 +686,172 @@ export const DialogCancelButton = styled(Button)({
     background: "rgba(255, 255, 255, 0.1)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
   },
+});
+
+// Logout button
+export const LogoutButton = styled(Button)({
+  background: "transparent",
+  color: "#ff00ff",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  fontWeight: 600,
+  textTransform: "uppercase",
+  padding: "12px 16px",
+  borderRadius: "8px",
+  border: "1px solid #ff00ff",
+  marginTop: "auto",
+  "&:hover": {
+    background: "rgba(255, 0, 255, 0.1)",
+    border: "1px solid #ff00ff",
+    boxShadow: "0 0 15px rgba(255, 0, 255, 0.5)",
+  },
+  "& .MuiButton-startIcon": {
+    marginRight: "8px",
+  },
+});
+
+// Dialog Autocomplete
+export const DialogAutocomplete = styled(Autocomplete)({
+  "& .MuiOutlinedInput-root": {
+    background: "rgba(0, 0, 0, 0.6)",
+    borderRadius: "8px",
+    "& fieldset": {
+      borderColor: "#00ffff",
+      borderWidth: "1px",
+    },
+    "&:hover fieldset": {
+      borderColor: "#00ffff",
+      borderWidth: "1px",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "#00ffff",
+      borderWidth: "2px",
+    },
+    "& input": {
+      color: "white",
+      fontFamily: "'Inter', sans-serif",
+      fontSize: "14px",
+      padding: "12px 16px",
+    },
+    "& .MuiInputLabel-root": {
+      color: "rgba(255, 255, 255, 0.7)",
+    },
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "#00ffff",
+  },
+  "& .MuiAutocomplete-popupIndicator": {
+    color: "#00ffff",
+  },
+  "& .MuiAutocomplete-clearIndicator": {
+    color: "#00ffff",
+  },
+});
+
+// User info section in dialog
+export const UserInfoSection = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "16px",
+  paddingBottom: "24px",
+  borderBottom: "1px solid rgba(0, 255, 255, 0.3)",
+  marginBottom: "24px",
+});
+
+// User name in dialog
+export const DialogUserName = styled(Typography)({
+  fontFamily: "'Orbitron', sans-serif",
+  fontSize: "20px",
+  fontWeight: 600,
+  color: "white",
+  letterSpacing: "1px",
+});
+
+// User email in dialog
+export const DialogUserEmail = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  color: "rgba(255, 255, 255, 0.7)",
+});
+
+// Device list section title
+export const DeviceListTitle = styled(Typography)({
+  fontFamily: "'Orbitron', sans-serif",
+  fontSize: "16px",
+  fontWeight: 600,
+  color: "#00ffff",
+  letterSpacing: "1px",
+  marginBottom: "16px",
+});
+
+// Device list container
+export const DeviceListContainer = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  maxHeight: "300px",
+  overflowY: "auto",
+  "&::-webkit-scrollbar": {
+    width: "8px",
+  },
+  "&::-webkit-scrollbar-track": {
+    background: "rgba(0, 0, 0, 0.3)",
+    borderRadius: "4px",
+  },
+  "&::-webkit-scrollbar-thumb": {
+    background: "rgba(0, 255, 255, 0.5)",
+    borderRadius: "4px",
+    "&:hover": {
+      background: "rgba(0, 255, 255, 0.7)",
+    },
+  },
+});
+
+// Device item card
+export const DeviceItemCard = styled(Card)({
+  background: "rgba(0, 0, 0, 0.6)",
+  border: "1px solid rgba(0, 255, 255, 0.2)",
+  borderRadius: "8px",
+  padding: "16px",
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  "&:hover": {
+    border: "1px solid rgba(255, 0, 255, 0.5)",
+    boxShadow: "0 0 10px rgba(255, 0, 255, 0.3)",
+  },
+});
+
+// Device item info
+export const DeviceItemInfo = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+  flex: 1,
+});
+
+// Device item name
+export const DeviceItemName = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  fontWeight: 600,
+  color: "white",
+});
+
+// Device item type
+export const DeviceItemType = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "12px",
+  color: "rgba(255, 255, 255, 0.6)",
+});
+
+// Empty devices message
+export const EmptyDevicesMessage = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  color: "rgba(255, 255, 255, 0.5)",
+  textAlign: "center",
+  padding: "32px",
+  fontStyle: "italic",
 });
 

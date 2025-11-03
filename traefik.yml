@@ -12,10 +12,10 @@ entryPoints:
 providers:
   docker:
     exposedByDefault: false
-    network: demo_net
   file:
     filename: /etc/traefik/dynamic/path.yml
     watch: true
+
 
 log:
   level: INFO

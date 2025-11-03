@@ -78,9 +78,13 @@ export default function Login() {
       try {
         setLoading(true);
         setShowError(false);
-        await authApi.login({ email, password });
-        // Redirect to dashboard on successful login
-        navigate("/dashboard");
+        const response = await authApi.login({ email, password });
+        // Redirect based on user role
+        if (response.role === "ADMIN") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       } catch (error) {
         setShowError(true);
       } finally {
@@ -94,9 +98,13 @@ export default function Login() {
 
       try {
         setLoading(true);
-        await authApi.register({ email, password, fullName });
-        // Redirect to dashboard on successful registration
-        navigate("/dashboard");
+        const response = await authApi.register({ email, password, fullName });
+        // Redirect based on user role
+        if (response.role === "ADMIN") {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       } catch (error) {
         setShowError(true);
       } finally {
@@ -158,7 +166,7 @@ export default function Login() {
                   SIGNUP
                 </ActiveTab>
               ) : (
-                <InactiveTab fullWidth onClick={() => ("signup")}>
+                <InactiveTab fullWidth onClick={() => handleTabChange("signup")}>
                   SIGNUP
                 </InactiveTab>
               )}
@@ -204,19 +212,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={handleTogglePassword}
-                          edge="end"
-                        >
-                          {showPassword ? <VisibilityIcon /> : <VisibilityOffIcon />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                  onChange={(e) => setPassword(e.target.value)}        
                 />
               </InputWrapper>
 
