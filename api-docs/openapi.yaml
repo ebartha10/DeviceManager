@@ -1,0 +1,685 @@
+openapi: 3.0.0
+info:
+  title: NEXUS Device Management Platform API
+  description: "RESTful API for the NEXUS Device Management Platform. Provides endpoints for user authentication, user management, device management, and user-device associations. All endpoints (except authentication) require JWT authentication via the Authorization header."
+  version: 1.0.0
+  contact:
+    name: NEXUS API Support
+    email: support@nexus.example.com
+
+servers:
+  - url: http://localhost
+    description: Local development server
+
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Creates a new user account and returns a JWT token
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: user@example.com
+              password: password123
+              fullName: John Doe
+              role: USER
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+        '400':
+          description: Bad request - User already exists or invalid input
+        '500':
+          description: Internal server error
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticates a user and returns a JWT token
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthenticationRequest'
+            example:
+              email: user@example.com
+              password: password123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthenticationResponse'
+        '401':
+          description: Unauthorized - Invalid credentials
+        '404':
+          description: User not found
+
+  /api/auth/validate:
+    get:
+      tags:
+        - Authentication
+      summary: Validate JWT token
+      description: Validates a JWT token and returns user information in headers
+      operationId: validateToken
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token is valid
+          headers:
+            X-User-Id:
+              schema:
+                type: string
+                format: uuid
+              description: User ID from token
+            X-User-Role:
+              schema:
+                type: string
+                enum: [USER, ADMIN]
+              description: User role from token
+        '401':
+          description: Unauthorized - Invalid or missing token
+
+  /users/get-all:
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      description: Retrieves a list of all users. Requires USER or ADMIN role.
+      operationId: getAllUsers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Insufficient permissions
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Retrieves a specific user by their ID. Requires USER or ADMIN role.
+      operationId: getUserById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '404':
+          description: User not found
+
+    post:
+      tags:
+        - Users
+      summary: Create a new user
+      description: Creates a new user. Requires ADMIN role.
+      operationId: createUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+            example:
+              fullName: Jane Doe
+              email: jane@example.com
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request - Invalid input
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Admin role required
+
+    put:
+      tags:
+        - Users
+      summary: Update user
+      description: Updates an existing user. Users can only update their own profile. Admins can update any user.
+      operationId: updateUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+            example:
+              id: "123e4567-e89b-12d3-a456-426614174000"
+              fullName: Jane Doe Updated
+              email: jane@example.com
+      responses:
+        '202':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request - Invalid input
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Cannot update other users
+
+    delete:
+      tags:
+        - Users
+      summary: Delete user
+      description: Deletes a user by ID. Requires ADMIN role.
+      operationId: deleteUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID to delete
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Deletion Successful"
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Admin role required
+        '404':
+          description: User not found
+
+  /device/get-all:
+    get:
+      tags:
+        - Devices
+      summary: Get all devices
+      description: Retrieves a list of all devices. Requires USER or ADMIN role.
+      operationId: getAllDevices
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of devices retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Insufficient permissions
+
+  /device:
+    get:
+      tags:
+        - Devices
+      summary: Get device by ID
+      description: Retrieves a specific device by its ID. Requires USER or ADMIN role.
+      operationId: getDeviceById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Device ID
+      responses:
+        '200':
+          description: Device retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '404':
+          description: Device not found
+
+    post:
+      tags:
+        - Devices
+      summary: Create a new device
+      description: Creates a new device. Requires ADMIN role.
+      operationId: createDevice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceCreate'
+            example:
+              name: iPhone 15 Pro
+              type: Smartphone
+              description: Latest Apple smartphone
+      responses:
+        '201':
+          description: Device created successfully
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+              description: URL of the created device
+        '400':
+          description: Bad request - Invalid input
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Admin role required
+
+    put:
+      tags:
+        - Devices
+      summary: Update device
+      description: Updates an existing device. Requires ADMIN role.
+      operationId: updateDevice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Device'
+            example:
+              id: "123e4567-e89b-12d3-a456-426614174000"
+              name: iPhone 15 Pro Max
+              type: Smartphone
+      responses:
+        '202':
+          description: Device updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '400':
+          description: Bad request - Invalid input
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Admin role required
+        '404':
+          description: Device not found
+
+    delete:
+      tags:
+        - Devices
+      summary: Delete device
+      description: Deletes a device by ID. Requires ADMIN role.
+      operationId: deleteDevice
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Device ID to delete
+      responses:
+        '200':
+          description: Device deleted successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Deletion Successful"
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Admin role required
+        '404':
+          description: Device not found
+
+  /device/user-device:
+    get:
+      tags:
+        - User-Device Associations
+      summary: Get devices for user
+      description: Retrieves all devices assigned to a specific user. Users can only view their own devices. Admins can view any user's devices.
+      operationId: getDevicesForUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+      responses:
+        '200':
+          description: List of user devices retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Cannot access other users' devices
+        '404':
+          description: User not found
+
+    post:
+      tags:
+        - User-Device Associations
+      summary: Assign device to user
+      description: Assigns a device to a user. Users can only assign devices to themselves. Admins can assign devices to any user.
+      operationId: addDeviceForUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDeviceRequest'
+            example:
+              userId: "123e4567-e89b-12d3-a456-426614174000"
+              deviceId: "223e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '200':
+          description: Device assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDevice'
+        '400':
+          description: Bad request - Invalid input or device already assigned
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Cannot assign devices to other users
+        '404':
+          description: User or device not found
+
+    delete:
+      tags:
+        - User-Device Associations
+      summary: Remove device from user
+      description: Removes a device assignment from a user. Users can only remove their own devices. Admins can remove any device assignment.
+      operationId: removeDeviceFromUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: User ID
+        - name: deviceId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Device ID
+      responses:
+        '200':
+          description: Device removed successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Deletion Successful"
+        '401':
+          description: Unauthorized - Missing or invalid token
+        '403':
+          description: Forbidden - Cannot remove devices from other users
+        '404':
+          description: User-device association not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /api/auth/login or /api/auth/register
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - fullName
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: User password
+          minLength: 6
+          example: password123
+        fullName:
+          type: string
+          description: User's full name
+          example: John Doe
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: User role (optional, defaults to USER)
+          example: USER
+
+    AuthenticationRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+        password:
+          type: string
+          format: password
+          description: User password
+          example: password123
+
+    AuthenticationResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT authentication token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        userId:
+          type: string
+          format: uuid
+          description: User ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: User role
+          example: USER
+
+    User:
+      type: object
+      required:
+        - id
+        - fullName
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        fullName:
+          type: string
+          description: User's full name
+          example: John Doe
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+
+    UserCreate:
+      type: object
+      required:
+        - fullName
+        - email
+      properties:
+        fullName:
+          type: string
+          description: User's full name
+          example: Jane Doe
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: jane@example.com
+
+    Device:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Device ID
+          example: "223e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: Device name
+          example: iPhone 15 Pro
+        type:
+          type: string
+          description: Device type
+          example: Smartphone
+        description:
+          type: string
+          description: Device description (optional)
+          example: Latest Apple smartphone
+
+    DeviceCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: Device name
+          example: iPhone 15 Pro
+        type:
+          type: string
+          description: Device type
+          example: Smartphone
+        description:
+          type: string
+          description: Device description (optional)
+          example: Latest Apple smartphone
+
+    UserDeviceRequest:
+      type: object
+      required:
+        - userId
+        - deviceId
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: User ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        deviceId:
+          type: string
+          format: uuid
+          description: Device ID
+          example: "223e4567-e89b-12d3-a456-426614174000"
+
+    UserDevice:
+      type: object
+      required:
+        - userId
+        - deviceId
+      properties:
+        userId:
+          type: string
+          format: uuid
+          description: User ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        deviceId:
+          type: string
+          format: uuid
+          description: Device ID
+          example: "223e4567-e89b-12d3-a456-426614174000"
+

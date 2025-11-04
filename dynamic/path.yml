@@ -56,13 +56,30 @@ http:
       service: device-service
 
     auth-api:
-      rule: "Host(`localhost`) && PathPrefix(`/api/auth`)" # Match requests to localhost with /api/auth prefix
+      rule: "Host(`localhost`) && PathPrefix(`/api/auth`) && !PathPrefix(`/api-docs`)" # Match requests to localhost with /api/auth prefix
       entryPoints:
         - web # Listen on the web (HTTP) entry point
       middlewares:
         - cors-headers # Add CORS headers
       # Don't strip prefix - auth service expects full /api/auth path
       service: auth-service
+
+    api-docs-yaml:
+      rule: "Host(`localhost`) && Path(`/api-docs/openapi.yaml`)" # Specific route for YAML file
+      entryPoints:
+        - web
+      middlewares:
+        - strip-api-docs-prefix # Remove /api-docs prefix before forwarding
+      service: api-docs-service
+      priority: 5
+
+    api-docs:
+      rule: "Host(`localhost`) && PathPrefix(`/api-docs`)" # Match requests to localhost with /api-docs prefix
+      entryPoints:
+        - web # Listen on the web (HTTP) entry point
+      middlewares:
+        - strip-api-docs-prefix # Remove /api-docs prefix before forwarding
+      service: api-docs-service
 
   middlewares:
     strip-device-prefix: # Middleware to remove /device prefix
@@ -84,6 +101,11 @@ http:
       stripPrefix:
         prefixes:
           - "/api/auth"
+
+    strip-api-docs-prefix: # Middleware to remove /api-docs prefix
+      stripPrefix:
+        prefixes:
+          - "/api-docs"
 
     auth-forward: # Middleware to validate JWT via auth service and forward headers
       forwardAuth:
@@ -133,3 +155,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://auth-microservice:8080" # Auth microservice container
+
+    api-docs-service:
+      loadBalancer:
+        servers:
+          - url: "http://api-docs:80" # API documentation service

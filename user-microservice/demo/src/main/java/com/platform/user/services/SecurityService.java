@@ -13,10 +13,7 @@ public class SecurityService {
     
     private static final String USER_ID_HEADER = "X-User-Id";
     private static final String USER_ROLE_HEADER = "X-User-Role";
-    
-    /**
-     * Gets the userId from the X-User-Id header
-     */
+             
     public UUID getUserId(HttpServletRequest request) {
         String userIdHeader = request.getHeader(USER_ID_HEADER);
         if (userIdHeader == null || userIdHeader.isBlank()) {
@@ -28,10 +25,7 @@ public class SecurityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid X-User-Id header format");
         }
     }
-    
-    /**
-     * Gets the user role from the X-User-Role header
-     */
+               
     public Role getUserRole(HttpServletRequest request) {
         String roleHeader = request.getHeader(USER_ROLE_HEADER);
         if (roleHeader == null || roleHeader.isBlank()) {
@@ -43,27 +37,18 @@ public class SecurityService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid X-User-Role header: " + roleHeader);
         }
     }
-    
-    /**
-     * Checks if the user has admin role
-     */
+
     public boolean isAdmin(HttpServletRequest request) {
         Role role = getUserRole(request);
         return role == Role.ADMIN;
     }
     
-    /**
-     * Verifies that the user has admin role, throws exception if not
-     */
     public void requireAdmin(HttpServletRequest request) {
         if (!isAdmin(request)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Admin role required");
         }
     }
     
-    /**
-     * Verifies that the user has one of the allowed roles
-     */
     public void requireRole(HttpServletRequest request, Role... allowedRoles) {
         Role userRole = getUserRole(request);
         for (Role allowedRole : allowedRoles) {
