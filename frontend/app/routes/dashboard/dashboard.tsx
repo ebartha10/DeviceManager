@@ -8,7 +8,6 @@ import { tokenStorage } from "../../api/tokenStorage";
 import {
   Dashboard as DashboardIcon,
   Person as PersonIcon,
-  Settings as SettingsIcon,
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -302,10 +301,6 @@ export default function Dashboard() {
               Profile
             </InactiveNavRouterLink>
           )}
-          <InactiveNavRouterLink to="/dashboard/settings">
-            <SettingsIcon />
-            Settings
-          </InactiveNavRouterLink>
         </NavigationSection>
 
         <LogoutButton

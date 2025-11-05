@@ -44,6 +44,15 @@ export const authApi = {
     return response;
   },
 
+  registerAdmin: async (data: RegisterRequest): Promise<AuthenticationResponse> => {
+    const response = await apiClient.post<AuthenticationResponse>(
+      "/api/auth/register",
+      data,
+      { skipAuth: true }
+    );
+    return response;
+  },
+
   logout: () => {
     tokenStorage.clearToken();
   },

@@ -8,7 +8,6 @@ import {
   People as PeopleIcon,
   Computer as ComputerIcon,
   Description as DescriptionIcon,
-  Settings as SettingsIcon,
   PersonAdd as PersonAddIcon,
   AddCircle as AddCircleIcon,
   Search as SearchIcon,
@@ -97,6 +96,7 @@ import {
   EmptyDevicesMessage,
   LogoutButton,
 } from "./StyledComponents";
+import { authApi } from "~/api";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -201,9 +201,10 @@ export default function Admin() {
 
   const handleAddUser = async () => {
     try {
-      await userApi.createUser({
+      await authApi.registerAdmin({
         fullName: userForm.fullName,
         email: userForm.email,
+        password: userForm.password,
       });
       setAddUserOpen(false);
       setUserForm({ fullName: "", email: "", password: "" });
@@ -351,15 +352,6 @@ export default function Admin() {
     </svg>
   );
 
-  const getUserStatus = (user: User): "ACTIVE" | "SUSPENDED" | "PENDING" => {
-    // In real app, this would come from user data
-    // For demo, randomly assign status
-    const index = users.indexOf(user);
-    if (index % 3 === 0) return "ACTIVE";
-    if (index % 3 === 1) return "SUSPENDED";
-    return "PENDING";
-  };
-
   return (
     <AdminContainer>
       <Sidebar>
@@ -393,10 +385,6 @@ export default function Admin() {
               Dashboard
             </InactiveNavRouterLink>
           )}
-          <InactiveNavRouterLink to="/admin/settings">
-            <SettingsIcon />
-            Settings
-          </InactiveNavRouterLink>
         </NavigationSection>
 
         <LogoutButton
@@ -506,7 +494,6 @@ export default function Admin() {
                   <TableRow>
                     <StyledTableHeadCell>NAME</StyledTableHeadCell>
                     <StyledTableHeadCell>{activeTab === "users" ? "EMAIL" : "TYPE"}</StyledTableHeadCell>
-                    <StyledTableHeadCell>STATUS</StyledTableHeadCell>
                     <StyledTableHeadCell>ACTIONS</StyledTableHeadCell>
                   </TableRow>
                 </TableHead>
@@ -526,34 +513,10 @@ export default function Admin() {
                       </TableRow>
                     ) : (
                       filteredUsers.map((user) => {
-                        const status = getUserStatus(user);
                         return (
                           <TableRow key={user.id}>
                             <StyledTableCell>{user.fullName}</StyledTableCell>
                             <StyledTableCell>{user.email}</StyledTableCell>
-                            <StyledTableCell>
-                              {status === "ACTIVE" && (
-                                <StatusChipActive
-                                  icon={<StatusDotGreen />}
-                                  label="ACTIVE"
-                                  size="small"
-                                />
-                              )}
-                              {status === "SUSPENDED" && (
-                                <StatusChipSuspended
-                                  icon={<StatusDotPink />}
-                                  label="SUSPENDED"
-                                  size="small"
-                                />
-                              )}
-                              {status === "PENDING" && (
-                                <StatusChipPending
-                                  icon={<StatusDotYellow />}
-                                  label="PENDING"
-                                  size="small"
-                                />
-                              )}
-                            </StyledTableCell>
                             <StyledTableCell>
                               <ActionsContainer>
                                 <ViewActionButton onClick={() => handleOpenUserDevices(user)}>
