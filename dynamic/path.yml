@@ -1,8 +1,7 @@
 http:
-  # Define URL routing rules, middlewares, and services
   routers:
 
-    # OPTIONS requests for CORS preflight - must be before other routes
+    # OPTIONS requests for CORS preflight
     device-api-options:
       rule: "Host(`localhost`) && PathPrefix(`/device`) && Method(`OPTIONS`)"
       entryPoints:
@@ -24,7 +23,7 @@ http:
     device-api:
       rule: "Host(`localhost`) && PathPrefix(`/device`)" # Match requests to localhost with /device prefix
       entryPoints:
-        - web # Listen on the web (HTTP) entry point
+        - web
       middlewares:
         - cors-headers # Add CORS headers
         - auth-forward # Validate JWT via auth service and forward headers
@@ -33,7 +32,7 @@ http:
     user-api:
       rule: "Host(`localhost`) && PathPrefix(`/users`)" # Match requests to localhost with /users prefix
       entryPoints:
-        - web # Listen on the web (HTTP) entry point
+        - web
       middlewares:
         - cors-headers # Add CORS headers
         - auth-forward # Validate JWT via auth service and forward headers
@@ -42,7 +41,7 @@ http:
     user-api-internal:
       rule: "Host(`user-microservice`) && PathPrefix(`/users`)" # Internal service-to-service calls
       entryPoints:
-        - web # Listen on the web (HTTP) entry point
+        - web
       middlewares:
         - strip-user-prefix # Remove /users prefix before forwarding
       service: user-service
@@ -50,7 +49,7 @@ http:
     device-api-internal:
       rule: "Host(`device-microservice`) && PathPrefix(`/users`)" # Internal service-to-service calls for device service
       entryPoints:
-        - web # Listen on the web (HTTP) entry point
+        - web
       middlewares:
         - strip-device-user-prefix # Remove /users prefix for internal device calls
       service: device-service
@@ -58,10 +57,9 @@ http:
     auth-api:
       rule: "Host(`localhost`) && PathPrefix(`/api/auth`) && !PathPrefix(`/api-docs`)" # Match requests to localhost with /api/auth prefix
       entryPoints:
-        - web # Listen on the web (HTTP) entry point
+        - web
       middlewares:
         - cors-headers # Add CORS headers
-      # Don't strip prefix - auth service expects full /api/auth path
       service: auth-service
 
     api-docs-yaml:
@@ -76,7 +74,7 @@ http:
     api-docs:
       rule: "Host(`localhost`) && PathPrefix(`/api-docs`)" # Match requests to localhost with /api-docs prefix
       entryPoints:
-        - web # Listen on the web (HTTP) entry point
+        - web
       middlewares:
         - strip-api-docs-prefix # Remove /api-docs prefix before forwarding
       service: api-docs-service
