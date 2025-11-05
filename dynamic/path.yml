@@ -66,8 +66,7 @@ http:
       rule: "Host(`localhost`) && Path(`/api-docs/openapi.yaml`)" # Specific route for YAML file
       entryPoints:
         - web
-      middlewares:
-        - strip-api-docs-prefix # Remove /api-docs prefix before forwarding
+      # Don't strip prefix - Swagger UI needs to serve at /api-docs
       service: api-docs-service
       priority: 5
 
@@ -75,8 +74,7 @@ http:
       rule: "Host(`localhost`) && PathPrefix(`/api-docs`)" # Match requests to localhost with /api-docs prefix
       entryPoints:
         - web
-      middlewares:
-        - strip-api-docs-prefix # Remove /api-docs prefix before forwarding
+      # Don't strip prefix - Swagger UI needs to serve at /api-docs
       service: api-docs-service
 
   middlewares:
@@ -157,4 +155,4 @@ http:
     api-docs-service:
       loadBalancer:
         servers:
-          - url: "http://api-docs:80" # API documentation service
+          - url: "http://api-docs:8080" # API documentation service
