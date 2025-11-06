@@ -79,7 +79,6 @@ export default function Login() {
         setLoading(true);
         setShowError(false);
         const response = await authApi.login({ email, password });
-        // Redirect based on user role
         if (response.role === "ADMIN") {
           navigate("/admin");
         } else {
@@ -92,14 +91,12 @@ export default function Login() {
       }
     } else {
       if (!email || !password || !fullName) {
-        // Show validation error
         return;
       }
 
       try {
         setLoading(true);
         const response = await authApi.register({ email, password, fullName });
-        // Redirect based on user role
         if (response.role === "ADMIN") {
           navigate("/admin");
         } else {
