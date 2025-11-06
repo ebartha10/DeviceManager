@@ -70,20 +70,16 @@ public class UserService {
         try {
             String url = deviceServiceBaseUrl + "/users";
 
-            // Set headers properly using HttpHeaders
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-User-Id", user.getId().toString());
             headers.set("X-User-Role", "ADMIN");
 
-            // Create request body
             Map<String, Object> body = Map.of(
                     "id", user.getId()
             );
 
-            // Create HttpEntity with headers and body
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-            // Make POST request with proper headers
             restTemplate.postForLocation(url, requestEntity);
         } catch (Exception ex) {
             LOGGER.warn("Failed to propagate user {} to device microservice: {}", savedUser.getId(), ex.getMessage());
