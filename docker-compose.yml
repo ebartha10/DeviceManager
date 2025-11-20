@@ -45,7 +45,7 @@ services:
       - demo_net
 
    device-microservice:
-    image: device-microservice
+    image: devicemicro2
     container_name: device-microservice
     environment:
       - DB_IP=db-device
@@ -57,7 +57,7 @@ services:
       - demo_net
 
    user-microservice:
-    image: user-microservice
+    image: usermicro2
     container_name: user-microservice
     environment:
       - DB_IP=db-user
@@ -73,7 +73,7 @@ services:
     build:
       context: ./auth-microservice/demo
       dockerfile: Dockerfile
-    image: auth-microservice
+    image: authmicro2
     container_name: auth-microservice
     environment:
       - DB_IP=db-auth
@@ -119,6 +119,25 @@ services:
     networks:
       - demo_net
 
+   rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: kalo
+      RABBITMQ_DEFAULT_PASS: kalo
+    configs:
+      - source: rabbitmq-plugins
+        target: /etc/rabbitmq/enabled_plugins
+    volumes:
+      - rabbitmq-lib:/var/lib/rabbitmq/
+      - rabbitmq-log:/var/log/rabbitmq
+    networks:
+      - demo_net
+
    traefik:
     image: traefik:v3.0
     container_name: traefik
@@ -138,10 +157,18 @@ services:
     networks:
       - demo_net
   
+configs:
+  rabbitmq-plugins:
+    content: "[rabbitmq_management]."
+
 volumes:
   my-db-device:
   my-db-user:
   my-db-auth:
+  rabbitmq-lib:
+    driver: local
+  rabbitmq-log:
+    driver: local
 
 networks:
   demo_net:

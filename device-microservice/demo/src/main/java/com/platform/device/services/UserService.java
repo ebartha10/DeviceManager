@@ -4,6 +4,7 @@ import com.platform.device.dtos.UserDTO;
 import com.platform.device.dtos.builders.UserBuilder;
 import com.platform.device.entities.User;
 import com.platform.device.handlers.exceptions.model.ResourceNotFoundException;
+import com.platform.device.repositories.UserDeviceRepository;
 import com.platform.device.repositories.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserDeviceRepository userDeviceRepository;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -48,5 +52,22 @@ public class UserService {
         LOGGER.debug("User with id {} was inserted in db", newUser.getId());
 
         return UserBuilder.fromPersistence(newUser);
+    }
+
+    public void deleteUser(UUID userId) {
+        Optional<User> user = this.userRepository.findById(userId);
+        if(user.isEmpty()) {
+            LOGGER.warn("User with id {} not found in device microservice, skipping deletion", userId);
+            return;
+        }
+
+        userDeviceRepository.findByIdUserId(userId).forEach(userDevice -> {
+            userDeviceRepository.delete(userDevice);
+            LOGGER.debug("Deleted user-device relationship for user {} and device {}", 
+                    userId, userDevice.getId().getDeviceId());
+        });
+
+        this.userRepository.deleteById(userId);
+        LOGGER.debug("User with id {} was deleted from device microservice", userId);
     }
 }

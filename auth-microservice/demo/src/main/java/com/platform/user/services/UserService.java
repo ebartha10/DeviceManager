@@ -11,16 +11,12 @@ import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -34,10 +30,7 @@ public class UserService {
     private UserRepository userRepository;
 
     @Autowired
-    private RestTemplate restTemplate;
-
-    @Value("${user-microservice.base-url}")
-    private String userServiceBaseUrl;
+    private UserEventPublisher userEventPublisher;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -57,7 +50,7 @@ public class UserService {
         User user = createUser(request);
         User savedUser = userRepository.save(user);
 
-        propagateUserToUserMicroservice(savedUser, request.getFullName());
+        userEventPublisher.publishUserCreated(savedUser.getId(), savedUser.getEmail(), request.getFullName());
         
         String jwtToken = generateTokenForUser(savedUser);
         
@@ -105,28 +98,6 @@ public class UserService {
         }
     }
 
-    private void propagateUserToUserMicroservice(User user, String fullName) {
-        try {
-            String url = userServiceBaseUrl + "/users";
-            
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-User-Id", user.getId().toString());
-            headers.set("X-User-Role", "ADMIN");
-            
-            Map<String, Object> body = Map.of(
-                    "id", user.getId(),
-                    "email", user.getEmail(),
-                    "fullName", fullName != null ? fullName : ""
-            );
-            
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-            
-            restTemplate.postForLocation(url, requestEntity);
-        } catch (Exception ex) {
-            LOGGER.warn("Failed to propagate user {} to user microservice: {}", 
-                    user.getId(), ex.getMessage());
-        }
-    }
 
     private String generateTokenForUser(User user) {
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -147,5 +118,15 @@ public class UserService {
                 .userId(userId)
                 .role(role.toString())
                 .build();
+    }
+
+    public void deleteUser(UUID userId) {
+        if (!userRepository.existsById(userId)) {
+            LOGGER.warn("User with id {} not found in auth microservice, skipping deletion", userId);
+            return;
+        }
+
+        userRepository.deleteById(userId);
+        LOGGER.debug("User with id {} was deleted from auth microservice", userId);
     }
 }

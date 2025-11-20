@@ -10,13 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,6 +29,9 @@ public class UserService {
 
     @Value("${device-microservice.base-url}")
     private String deviceServiceBaseUrl;
+
+    @Autowired
+    private UserEventPublisher userEventPublisher;
 
     public List<UserDTO> getAllUsers() {
         List<User> users = (List<User>) this.userRepository.findAll();
@@ -49,40 +49,27 @@ public class UserService {
     }
 
     public UserDTO createUser(UserDTO user) {
-        // Check if user already exists (idempotent create)
+        return createUser(user, true);
+    }
+
+    public UserDTO createUser(UserDTO user, boolean publishEvent) {
         Optional<User> existingUser = this.userRepository.findById(user.getId());
         
         User savedUser;
         if (existingUser.isPresent()) {
-            // User already exists, update it instead of creating new one
             User userToUpdate = existingUser.get();
             userToUpdate.setFullName(user.getFullName());
             userToUpdate.setEmail(user.getEmail());
             savedUser = this.userRepository.save(userToUpdate);
             LOGGER.debug("User with id {} was updated in db", savedUser.getId());
         } else {
-            // New user, create it
             User newUser = UserBuilder.toUserEntity(user);
             savedUser = this.userRepository.save(newUser);
             LOGGER.debug("User with id {} was inserted in db", savedUser.getId());
         }
         
-        try {
-            String url = deviceServiceBaseUrl + "/users";
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-User-Id", user.getId().toString());
-            headers.set("X-User-Role", "ADMIN");
-
-            Map<String, Object> body = Map.of(
-                    "id", user.getId()
-            );
-
-            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-            restTemplate.postForLocation(url, requestEntity);
-        } catch (Exception ex) {
-            LOGGER.warn("Failed to propagate user {} to device microservice: {}", savedUser.getId(), ex.getMessage());
+        if (publishEvent) {
+            userEventPublisher.publishUserCreated(savedUser.getId(), savedUser.getEmail(), savedUser.getFullName());
         }
         return UserBuilder.fromPersistance(savedUser);
     }
@@ -113,6 +100,8 @@ public class UserService {
 
         this.userRepository.deleteById(id);
         LOGGER.debug("User with id {} was deleted from db", id);
+        
+        userEventPublisher.publishUserDeleted(id);
     }
 
 }
