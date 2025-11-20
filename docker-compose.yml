@@ -44,6 +44,21 @@ services:
     networks:
       - demo_net
 
+   db-monitoring:
+    image: postgres
+    container_name: db-monitoring
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: monitoring-microservice
+    ports:
+      - "5436:5432"
+    volumes:
+      - my-db-monitoring:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
    device-microservice:
     image: devicemicro2
     container_name: device-microservice
@@ -93,6 +108,30 @@ services:
       - demo_net
     depends_on:
       - db-auth
+
+   monitoring-microservice:
+    build:
+      context: ./monitoring-microservice/demo
+      dockerfile: Dockerfile
+    image: monitoringmicro2
+    container_name: monitoring-microservice
+    environment:
+      - DB_IP=db-monitoring
+      - DB_PORT=5432
+      - DB_DBNAME=monitoring-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=kalo
+      - RABBITMQ_PASSWORD=kalo
+      - USER_MICROSERVICE_BASE_URL=http://user-microservice:8080
+    networks:
+      - demo_net
+    depends_on:
+      - db-monitoring
+      - rabbitmq
 
    frontend:
     build:
@@ -165,6 +204,7 @@ volumes:
   my-db-device:
   my-db-user:
   my-db-auth:
+  my-db-monitoring:
   rabbitmq-lib:
     driver: local
   rabbitmq-log:

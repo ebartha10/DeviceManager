@@ -16,6 +16,10 @@ public class RabbitMQConfig {
     public static final String USER_DELETE_ROUTING_KEY = "user.delete";
     public static final String DEVICE_USER_QUEUE = "device.user.queue";
 
+    public static final String DEVICE_EVENTS_EXCHANGE = "device.events.exchange";
+    public static final String DEVICE_CREATE_ROUTING_KEY = "device.create";
+    public static final String DEVICE_DELETE_ROUTING_KEY = "device.delete";
+
     @Bean
     public Queue deviceUserQueue() {
         return QueueBuilder.durable(DEVICE_USER_QUEUE).build();
@@ -24,6 +28,11 @@ public class RabbitMQConfig {
     @Bean
     public TopicExchange userEventsExchange() {
         return new TopicExchange(USER_EVENTS_EXCHANGE);
+    }
+
+    @Bean
+    public TopicExchange deviceEventsExchange() {
+        return new TopicExchange(DEVICE_EVENTS_EXCHANGE);
     }
 
     @Bean

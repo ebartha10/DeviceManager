@@ -1,0 +1,126 @@
+{
+  "info": {
+    "name": "Device API",
+    "_postman_id": "b7f0b8b1-6f0e-4c5b-9f13-device-demo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "resource", "value": "device" },
+    { "key": "deviceId", "value": "" },
+    { "key": "userId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "GET – List all devices (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": { "raw": "{{baseUrl}}/{{resource}}/get-all", "host": ["{{baseUrl}}"], "path": ["{{resource}}", "get-all"] }
+      }
+    },
+    {
+      "name": "GET – Get device by ID (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}?id={{deviceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}"],
+          "query": [{ "key": "id", "value": "{{deviceId}}" }]
+        }
+      }
+    },
+    {
+      "name": "POST – Create device (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{deviceId}}\",\n  \"name\": \"Device Name\",\n  \"type\": \"Device Type\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/{{resource}}", "host": ["{{baseUrl}}"], "path": ["{{resource}}"] }
+      }
+    },
+    {
+      "name": "PUT – Update device (202)",
+      "request": {
+        "method": "PUT",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{deviceId}}\",\n  \"name\": \"Updated Device Name\",\n  \"type\": \"Updated Device Type\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/{{resource}}", "host": ["{{baseUrl}}"], "path": ["{{resource}}"] }
+      }
+    },
+    {
+      "name": "DELETE – Delete device by ID (200)",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}?id={{deviceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}"],
+          "query": [{ "key": "id", "value": "{{deviceId}}" }]
+        }
+      }
+    },
+    {
+      "name": "POST – Add device for user (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"device\": {\n    \"id\": \"{{deviceId}}\",\n    \"name\": \"Device Name\",\n    \"type\": \"Device Type\"\n  },\n  \"deviceName\": \"User Device Name\",\n  \"serialNumber\": \"12345\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/{{resource}}/user-device", "host": ["{{baseUrl}}"], "path": ["{{resource}}", "user-device"] }
+      }
+    },
+    {
+      "name": "DELETE – Remove device for user (200)",
+      "request": {
+        "method": "DELETE",
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}/user-device?userId={{userId}}&deviceId={{deviceId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}", "user-device"],
+          "query": [
+            { "key": "userId", "value": "{{userId}}" },
+            { "key": "deviceId", "value": "{{deviceId}}" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "POST – Create user (201)",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"{{userId}}\"\n}"
+        },
+        "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+      }
+    },
+    {
+      "name": "GET – Get devices for user (200)",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Accept", "value": "application/json" }],
+        "url": {
+          "raw": "{{baseUrl}}/{{resource}}/user-device?userId={{userId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["{{resource}}", "user-device"],
+          "query": [
+            { "key": "userId", "value": "{{userId}}" }
+          ]
+        }
+      }
+    }
+  ]
+}

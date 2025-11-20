@@ -21,9 +21,6 @@ public class DeviceService {
     @Autowired
     private DeviceRepository deviceRepository;
 
-    @Autowired
-    private DeviceEventPublisher deviceEventPublisher;
-
     public List<DeviceDTO> getAllDevices() {
         List<Device> users = (List<Device>) this.deviceRepository.findAll();
         return users.stream().map(DeviceBuilder::fromPersistance).toList();
@@ -40,12 +37,21 @@ public class DeviceService {
     }
 
     public DeviceDTO createDevice(DeviceDTO device) {
+        if (device.getId() == null) {
+            LOGGER.error("Cannot create device with null ID");
+            throw new IllegalArgumentException("Device ID cannot be null");
+        }
+
         Device newDevice = DeviceBuilder.toDeviceEntity(device);
+        LOGGER.debug("Creating device with id: {}, name: {}, type: {}", newDevice.getId(), newDevice.getName(), newDevice.getType());
 
-        newDevice = this.deviceRepository.save(newDevice);
-        LOGGER.debug("Device with id {} was inserted in db", newDevice.getId());
-
-        deviceEventPublisher.publishDeviceCreated(newDevice.getId(), newDevice.getName(), newDevice.getType());
+        try {
+            newDevice = this.deviceRepository.save(newDevice);
+            LOGGER.info("Device with id {} was successfully inserted in db", newDevice.getId());
+        } catch (Exception e) {
+            LOGGER.error("Failed to save device with id {}: {}", device.getId(), e.getMessage(), e);
+            throw e;
+        }
 
         return DeviceBuilder.fromPersistance(newDevice);
     }
@@ -76,8 +82,6 @@ public class DeviceService {
 
         this.deviceRepository.deleteById(id);
         LOGGER.debug("Device with id {} was deleted from db", id);
-
-        deviceEventPublisher.publishDeviceDeleted(id);
     }
 
 }

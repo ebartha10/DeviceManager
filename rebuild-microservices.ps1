@@ -41,6 +41,7 @@ function Build-Microservice {
 Build-Microservice "auth-microservice" "./auth-microservice/demo" "auth-microservice2"
 Build-Microservice "user-microservice" "./user-microservice/demo" "user-microservice2"
 Build-Microservice "device-microservice" "./device-microservice/demo" "device-microservice2"
+Build-Microservice "monitoring-microservice" "./monitoring-microservice/demo" "monitoringmicro2"
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
