@@ -12,6 +12,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Logout as LogoutIcon,
+  ShowChart as ShowChartIcon,
 } from "@mui/icons-material";
 import {
   DashboardContainer,
@@ -59,6 +60,7 @@ import {
   EditButtonPink,
   EditButtonYellow,
   DeleteButton,
+  ChartButton,
   StyledDialog,
   StyledDialogTitle,
   StyledDialogContent,
@@ -73,6 +75,7 @@ import {
   LogoutButton,
 } from "./StyledComponents";
 import { userApi } from "~/api/userApi";
+import { DeviceMonitoring } from "./DeviceMonitoring";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -94,6 +97,7 @@ export default function Dashboard() {
   const [userDevices, setUserDevices] = useState<Device[]>([]);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
+  const [monitoringDevice, setMonitoringDevice] = useState<Device | null>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -231,6 +235,17 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeviceClick = (deviceId: string) => {
+    const device = userDevices.find((d) => d.id === deviceId);
+    if (device) {
+      setMonitoringDevice(device);
+    }
+  };
+
+  const handleCloseMonitoring = () => {
+    setMonitoringDevice(null);
+  };
+
   const renderDeviceCard = (device: typeof deviceDisplayData[0]) => {
     const CardComponent =
       device.borderColor === "cyan"
@@ -247,13 +262,31 @@ export default function Dashboard() {
         : DeviceTypeYellow;
 
     return (
-      <CardComponent key={device.id}>
+      <CardComponent 
+        key={device.id}
+        sx={{
+          transition: "all 0.2s",
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: "0 8px 24px rgba(0, 255, 255, 0.3)",
+          },
+        }}
+      >
         <DeviceInfoContainer>
           <DeviceName>{device.name}</DeviceName>
           <TypeComponent>{device.type}</TypeComponent>
         </DeviceInfoContainer>
         <DeviceActionsContainer>
-          <DeleteButton onClick={() => handleDeleteDevice(device.id)}>
+          <ChartButton 
+            onClick={() => handleDeviceClick(device.id)}
+            title="View Energy Consumption Chart"
+          >
+            <ShowChartIcon />
+          </ChartButton>
+          <DeleteButton 
+            onClick={() => handleDeleteDevice(device.id)}
+            title="Remove Device"
+          >
             <DeleteIcon />
           </DeleteButton>
         </DeviceActionsContainer>
@@ -317,24 +350,28 @@ export default function Dashboard() {
 
       <MainContent>
         {isDashboard ? (
-          <>
-            <PageHeader>
-              <PageTitleContainer>
-                <PageTitle>DEVICE MANAGEMENT</PageTitle>
-                <PageSubtitle>Monitor and control your connected devices</PageSubtitle>
-              </PageTitleContainer>
-              <PrimaryActionButton
-                startIcon={<AddIcon />}
-                onClick={() => setAddDeviceOpen(true)}
-              >
-                ADD DEVICE
-              </PrimaryActionButton>
-            </PageHeader>
+          monitoringDevice ? (
+            <DeviceMonitoring device={monitoringDevice} onClose={handleCloseMonitoring} />
+          ) : (
+            <>
+              <PageHeader>
+                <PageTitleContainer>
+                  <PageTitle>DEVICE MANAGEMENT</PageTitle>
+                  <PageSubtitle>Monitor and control your connected devices</PageSubtitle>
+                </PageTitleContainer>
+                <PrimaryActionButton
+                  startIcon={<AddIcon />}
+                  onClick={() => setAddDeviceOpen(true)}
+                >
+                  ADD DEVICE
+                </PrimaryActionButton>
+              </PageHeader>
 
-            <DeviceCardsContainer>
-              {deviceDisplayData.map(renderDeviceCard)}
-            </DeviceCardsContainer>
-          </>
+              <DeviceCardsContainer>
+                {deviceDisplayData.map(renderDeviceCard)}
+              </DeviceCardsContainer>
+            </>
+          )
         ) : (
           <Outlet />
         )}

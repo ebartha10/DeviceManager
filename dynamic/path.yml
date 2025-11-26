@@ -77,6 +77,38 @@ http:
       # Don't strip prefix - Swagger UI needs to serve at /api-docs
       service: api-docs-service
 
+    # OPTIONS requests for CORS preflight
+    monitoring-api-options:
+      rule: "Host(`localhost`) && PathPrefix(`/monitoring`) && Method(`OPTIONS`)"
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+      service: monitoring-service
+      priority: 10
+
+    # WebSocket endpoint - bypass auth-forward as WebSocket connections handle auth differently
+    # This must come BEFORE the general monitoring-api route to match first
+    monitoring-websocket:
+      rule: "Host(`localhost`) && PathPrefix(`/monitoring/ws`)" # Match WebSocket connections and SockJS /info endpoint
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers # Add CORS headers
+        - strip-monitoring-prefix # Remove /monitoring prefix before forwarding
+      service: monitoring-service
+      priority: 20
+
+    monitoring-api:
+      rule: "Host(`localhost`) && PathPrefix(`/monitoring`) && !PathPrefix(`/monitoring/ws`)" # Match requests to localhost with /monitoring prefix, but NOT /monitoring/ws
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers # Add CORS headers
+        - auth-forward # Validate JWT via auth service and forward headers
+        - strip-monitoring-prefix # Remove /monitoring prefix before forwarding
+      service: monitoring-service
+
   middlewares:
     strip-device-prefix: # Middleware to remove /device prefix
       stripPrefix: 
@@ -102,6 +134,16 @@ http:
       stripPrefix:
         prefixes:
           - "/api-docs"
+
+    strip-monitoring-prefix: # Middleware to remove /monitoring prefix
+      stripPrefix:
+        prefixes:
+          - "/monitoring"
+    
+    strip-monitoring-ws-prefix: # Middleware to remove /monitoring prefix but keep /ws
+      stripPrefix:
+        prefixes:
+          - "/monitoring"
 
     auth-forward: # Middleware to validate JWT via auth service and forward headers
       forwardAuth:
@@ -156,3 +198,8 @@ http:
       loadBalancer:
         servers:
           - url: "http://api-docs:8080" # API documentation service
+
+    monitoring-service:
+      loadBalancer:
+        servers:
+          - url: "http://monitoring-microservice:8080" # Monitoring microservice container

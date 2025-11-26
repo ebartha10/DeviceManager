@@ -10,9 +10,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "hourly_energy_consumption", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"device_id", "hour_timestamp"})
-})
+@Table(name = "hourly_energy_consumption")
 @Getter
 @Setter
 @AllArgsConstructor

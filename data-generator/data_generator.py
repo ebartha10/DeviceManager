@@ -1,0 +1,194 @@
+import time
+import json
+import random
+import uuid
+import logging
+import datetime
+import requests
+import pika
+import os
+
+# Configuration
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost")
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "kalo")
+RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "kalo")
+
+# RabbitMQ Config
+EXCHANGE_NAME = "device.measurements.exchange"
+ROUTING_KEY = "device.measurement"
+
+# Simulation Config
+REAL_TIME_INTERVAL = 1       # 1 seconds real time delay
+SIMULATED_TIME_STEP = 600    # 10 minutes simulated time step
+
+# Logger setup
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+class DeviceSimulator:
+    def __init__(self, device_id, device_name):
+        self.device_id = device_id
+        self.device_name = device_name
+        # Random base load between 0.1 and 0.5 kWh per 10-minute interval
+        self.base_load = random.uniform(0.1, 0.5)
+        logger.info(f"Initialized simulator for device {device_name} ({device_id}) with base load {self.base_load:.4f}")
+
+    def generate_measurement(self, timestamp):
+        hour = timestamp.hour
+        
+        # Time of day factor
+        if 0 <= hour < 6:
+            time_factor = 0.5  # Night
+        elif 6 <= hour < 10:
+            time_factor = 1.0  # Morning
+        elif 10 <= hour < 18:
+            time_factor = 1.2  # Day
+        elif 18 <= hour < 22:
+            time_factor = 1.5  # Evening
+        else:
+            time_factor = 0.8  # Late night
+            
+        # Random fluctuation +/- 10%
+        fluctuation = random.uniform(0.9, 1.1)
+        
+        measurement = self.base_load * time_factor * fluctuation
+        
+        return {
+            "timestamp": timestamp.isoformat(),
+            "deviceId": self.device_id,
+            "measurementValue": measurement
+        }
+
+def get_auth_token():
+    # Try to register first (idempotent-ish via error handling)
+    register_url = f"{API_BASE_URL}/api/auth/register"
+    login_url = f"{API_BASE_URL}/api/auth/login"
+    
+    user_data = {
+        "email": "generator@test.com",
+        "password": "password",
+        "fullName": "Data Generator",
+        "role": "ADMIN"
+    }
+    
+    auth_data = {
+        "email": "generator@test.com",
+        "password": "password"
+    }
+
+    try:
+        # Attempt registration
+        logger.info("Attempting registration...")
+        requests.post(register_url, json=user_data)
+        # Ignore result, if it fails it might already exist
+    except Exception as e:
+        logger.warning(f"Registration request failed (might be expected): {e}")
+
+    try:
+        # Login
+        logger.info("Logging in...")
+        response = requests.post(login_url, json=auth_data)
+        response.raise_for_status()
+        token = response.json().get("token")
+        logger.info("Login successful")
+        return token
+    except Exception as e:
+        logger.error(f"Login failed: {e}")
+        return None
+
+def get_devices(token):
+    url = f"{API_BASE_URL}/device/get-all"
+    headers = {"Authorization": f"Bearer {token}"}
+    
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Failed to fetch devices: {e}")
+        return []
+
+def setup_rabbitmq():
+    credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+    parameters = pika.ConnectionParameters(RABBITMQ_HOST, RABBITMQ_PORT, '/', credentials)
+    return pika.BlockingConnection(parameters)
+
+def main():
+    logger.info("Starting Data Generator...")
+    
+    # 1. Authenticate
+    token = get_auth_token()
+    if not token:
+        logger.error("Could not authenticate. Exiting.")
+        return
+
+    # 2. Get Devices
+    devices_data = get_devices(token)
+    if not devices_data:
+        logger.warning("No devices found. Waiting or exiting...")
+        # Could retry here, but for now we'll just exit or wait
+        if not devices_data:
+            logger.info("No devices to simulate. Exiting.")
+            return
+
+    logger.info(f"Found {len(devices_data)} devices.")
+    
+    simulators = [DeviceSimulator(d['id'], d['name']) for d in devices_data]
+
+    # 3. Connect to RabbitMQ
+    try:
+        connection = setup_rabbitmq()
+        channel = connection.channel()
+        # Ensure exchange exists (optional, but good practice)
+        channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type='topic', durable=True)
+        logger.info("Connected to RabbitMQ")
+    except Exception as e:
+        logger.error(f"Failed to connect to RabbitMQ: {e}")
+        return
+
+    # Start simulation time from now
+    current_simulated_time = datetime.datetime.now()
+
+    try:
+        while True:
+            logger.info(f"Generating measurements for time: {current_simulated_time}...")
+            for sim in simulators:
+                measurement = sim.generate_measurement(current_simulated_time)
+                
+                # Publish
+                try:
+                    channel.basic_publish(
+                        exchange=EXCHANGE_NAME,
+                        routing_key=ROUTING_KEY,
+                        body=json.dumps(measurement),
+                        properties=pika.BasicProperties(
+                            content_type='application/json',
+                            delivery_mode=2, # persistent
+                        )
+                    )
+                    logger.info(f"Sent measurement for {sim.device_name}: {measurement['measurementValue']:.4f}")
+                except Exception as e:
+                    logger.error(f"Failed to send message: {e}")
+                    # Reconnect logic could go here
+            
+            # Advance simulated time
+            current_simulated_time += datetime.timedelta(seconds=SIMULATED_TIME_STEP)
+            
+            logger.info(f"Sleeping for {REAL_TIME_INTERVAL} seconds...")
+            time.sleep(REAL_TIME_INTERVAL)
+
+    except KeyboardInterrupt:
+        logger.info("Stopping generator...")
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+    finally:
+        if connection and not connection.is_closed:
+            connection.close()
+
+if __name__ == "__main__":
+    main()

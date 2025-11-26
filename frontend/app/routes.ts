@@ -7,4 +7,6 @@ export default [
     route("profile", "routes/dashboard/profile.tsx"),
   ]),
   route("admin", "routes/admin/admin.tsx"),
+  // Catch-all for .well-known paths (Chrome DevTools, etc.)
+  route(".well-known/*", "routes/well-known.tsx"),
 ] satisfies RouteConfig;

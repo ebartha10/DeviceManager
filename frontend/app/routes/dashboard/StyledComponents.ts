@@ -455,6 +455,15 @@ export const DeleteButton = styled(ActionIconButton)({
   },
 });
 
+// Chart button
+export const ChartButton = styled(ActionIconButton)({
+  backgroundColor: "#00ffff",
+  color: "white",
+  "&:hover": {
+    backgroundColor: "#00ccff",
+  },
+});
+
 // Modal/Dialog styled components
 // Dialog container
 export const StyledDialog = styled(Dialog)({
@@ -661,5 +670,144 @@ export const LogoutButton = styled(Button)({
   "& .MuiButton-startIcon": {
     marginRight: "8px",
   },
+});
+
+// Monitoring container
+export const MonitoringContainer = styled(Box)({
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  background: "#000000",
+});
+
+// Monitoring header
+export const MonitoringHeader = styled(Box)({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: "24px",
+  flexWrap: "wrap",
+  gap: "16px",
+});
+
+// Monitoring title
+export const MonitoringTitle = styled(Typography)({
+  fontFamily: "'Orbitron', sans-serif",
+  fontSize: "24px",
+  fontWeight: 700,
+  color: "white",
+  letterSpacing: "1px",
+});
+
+// Monitoring back button
+export const MonitoringBackButton = styled(Button)({
+  color: "#00ffff",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  fontWeight: 600,
+  textTransform: "none",
+  "&:hover": {
+    backgroundColor: "rgba(0, 255, 255, 0.1)",
+  },
+  "& .MuiButton-startIcon": {
+    marginRight: "8px",
+  },
+});
+
+// Monitoring header content
+export const MonitoringHeaderContent = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "16px",
+});
+
+// Chart container
+export const ChartContainer = styled(Box)({
+  flex: 1,
+  minHeight: "500px",
+  background: "rgba(0, 0, 0, 0.8)",
+  borderRadius: "12px",
+  border: "1px solid #00ffff",
+  padding: "24px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+});
+
+// Date picker container
+export const DatePickerContainer = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+});
+
+// Date picker button
+export const DatePickerButton = styled(Button)({
+  background: "linear-gradient(90deg, #ff00ff 0%, #00ffff 100%)",
+  color: "white",
+  fontFamily: "'Inter', sans-serif",
+  fontWeight: 600,
+  fontSize: "14px",
+  textTransform: "none",
+  padding: "10px 20px",
+  borderRadius: "8px",
+  "&:hover": {
+    background: "linear-gradient(90deg, #ff00ff 0%, #00ffff 100%)",
+    boxShadow: "0 0 20px rgba(0, 255, 255, 0.5)",
+  },
+  "&:disabled": {
+    opacity: 0.5,
+  },
+});
+
+// Date picker text field
+export const DatePickerTextField = styled(TextField)({
+  "& .MuiOutlinedInput-root": {
+    color: "#00ffff",
+    "& fieldset": {
+      borderColor: "#00ffff",
+    },
+    "&:hover fieldset": {
+      borderColor: "#00ffff",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "#00ffff",
+    },
+  },
+  "& .MuiInputLabel-root": {
+    color: "#00ffff",
+  },
+});
+
+// Back to real-time button
+export const BackToRealtimeButton = styled(Button)({
+  color: "#00ffff",
+  borderColor: "#00ffff",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  fontWeight: 600,
+  textTransform: "none",
+  "&:hover": {
+    borderColor: "#00ffff",
+    backgroundColor: "rgba(0, 255, 255, 0.1)",
+  },
+});
+
+// Empty chart container
+export const EmptyChartContainer = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  height: "100%",
+  width: "100%",
+});
+
+// Empty chart text
+export const EmptyChartText = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "16px",
+  color: "rgba(255, 255, 255, 0.6)",
+  textAlign: "center",
 });
 
