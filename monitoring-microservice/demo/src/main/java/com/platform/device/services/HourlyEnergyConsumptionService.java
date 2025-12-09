@@ -101,9 +101,6 @@ public class HourlyEnergyConsumptionService {
             
             // Send to device-specific topic
             messagingTemplate.convertAndSend("/topic/consumption/" + deviceId, update);
-
-            // Also send to general consumption topic for all devices
-            messagingTemplate.convertAndSend("/topic/consumption/all", update);
             
             LOGGER.debug("Published real-time consumption update for device {}", deviceId);
         }

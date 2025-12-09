@@ -152,7 +152,7 @@ def main():
         return
 
     # Start simulation time from now
-    current_simulated_time = datetime.datetime.now()
+    current_simulated_time = datetime.datetime.now() - datetime.timedelta(days=1)
 
     try:
         while True:

@@ -10,9 +10,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ArrowBack as ArrowBackIcon } from "@mui/icons-material";
-import { monitoringApi, type DailyEnergyConsumption, type RealtimeConsumption } from "../../api/monitoringApi";
-import { websocketClient } from "../../api/websocketClient";
-import type { Device } from "../../api/deviceApi";
+import { monitoringApi, type DailyEnergyConsumption, type RealtimeConsumption } from "~/api/monitoringApi";
+import { websocketClient } from "~/api/websocketClient";
+import type { Device } from "~/api/deviceApi";
 import {
   MonitoringContainer,
   MonitoringHeader,

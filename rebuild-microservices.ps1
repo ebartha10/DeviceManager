@@ -22,12 +22,6 @@ function Build-Microservice {
     Push-Location $ServiceDir
     
     try {
-        Write-Host "Running mvn clean package..." -ForegroundColor Green
-        mvn clean package -DskipTests
-        
-        Write-Host "Running mvn install..." -ForegroundColor Green
-        mvn install -DskipTests
-        
         Write-Host "Building Docker image: $ImageName" -ForegroundColor Green
         docker build -t $ImageName .
         
@@ -38,10 +32,12 @@ function Build-Microservice {
     }
 }
 
-Build-Microservice "auth-microservice" "./auth-microservice/demo" "auth-microservice2"
-Build-Microservice "user-microservice" "./user-microservice/demo" "user-microservice2"
-Build-Microservice "device-microservice" "./device-microservice/demo" "device-microservice2"
-Build-Microservice "monitoring-microservice" "./monitoring-microservice/demo" "monitoringmicro2"
+#Build-Microservice "auth-microservice" "./auth-microservice/demo" "authmicro2"
+#Build-Microservice "user-microservice" "./user-microservice/demo" "usermicro2"
+#Build-Microservice "device-microservice" "./device-microservice/demo" "devicemicro2"
+#Build-Microservice "monitoring-microservice" "./monitoring-microservice/demo" "monitoringmicro2"
+Build-Microservice "chat-microservice" "./chat-microservice/demo" "chatmicro2"
+Build-Microservice "websocket-microservice" "./websocket-microservice/demo" "websocketmicro2"
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan

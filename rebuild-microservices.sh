@@ -21,12 +21,6 @@ build_microservice() {
     
     cd "$SERVICE_DIR"
     
-    echo "Running mvn clean package..."
-    mvn clean package -DskipTests
-    
-    echo "Running mvn install..."
-    mvn install -DskipTests
-    
     echo "Building Docker image: $IMAGE_NAME"
     docker build -t "$IMAGE_NAME" .
     
@@ -34,9 +28,12 @@ build_microservice() {
     cd "$SCRIPT_DIR"
 }
 
-build_microservice "auth-microservice" "./auth-microservice/demo" "auth-microservice2"
-build_microservice "user-microservice" "./user-microservice/demo" "user-microservice2"
-build_microservice "device-microservice" "./device-microservice/demo" "device-microservice2"
+#build_microservice "auth-microservice" "./auth-microservice/demo" "authmicro2"
+#build_microservice "user-microservice" "./user-microservice/demo" "usermicro2"
+#build_microservice "device-microservice" "./device-microservice/demo" "devicemicro2"
+build_microservice "chat-microservice" "./chat-microservice/demo" "chatmicro2"
+build_microservice "websocket-microservice" "./websocket-microservice/demo" "websocketmicro2"
+#build_microservice "monitoring-microservice" "./monitoring-microservice/demo" "monitoringmicro2"
 
 echo ""
 echo "=========================================="

@@ -12,8 +12,13 @@ import {
   DialogActions,
   TextField,
   Autocomplete,
+  Fab,
+  Paper,
+  IconButton,
 } from "@mui/material";
 import { Link as RouterLink } from "react-router";
+
+// ... (Previous components remain unchanged)
 
 // Main layout container
 export const DashboardContainer = styled(Box)({
@@ -811,3 +816,157 @@ export const EmptyChartText = styled(Typography)({
   textAlign: "center",
 });
 
+// --- Support Chat Styled Components ---
+
+export const ChatFloatingButton = styled(Fab)({
+  position: "fixed",
+  bottom: "24px",
+  right: "24px",
+  background: "linear-gradient(135deg, #00ffff 0%, #ff00ff 100%)",
+  color: "white",
+  zIndex: 1000,
+  "&:hover": {
+    background: "linear-gradient(135deg, #00ffff 0%, #ff00ff 100%)",
+    boxShadow: "0 0 20px rgba(255, 0, 255, 0.5)",
+  },
+});
+
+export const ChatWindowContainer = styled(Paper)({
+  position: "fixed",
+  bottom: "96px",
+  right: "24px",
+  width: "360px",
+  height: "500px",
+  background: "rgba(0, 0, 0, 0.95)",
+  border: "1px solid #00ffff",
+  borderRadius: "16px",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
+  zIndex: 1000,
+  boxShadow: "0 0 30px rgba(0, 0, 0, 0.8)",
+});
+
+export const ChatHeader = styled(Box)({
+  padding: "16px",
+  background: "rgba(0, 255, 255, 0.1)",
+  borderBottom: "1px solid rgba(0, 255, 255, 0.2)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+});
+
+export const ChatTitle = styled(Typography)({
+  fontFamily: "'Orbitron', sans-serif",
+  fontSize: "16px",
+  fontWeight: 700,
+  color: "white",
+  letterSpacing: "1px",
+});
+
+export const ChatCloseButton = styled(Button)({
+  minWidth: "auto",
+  padding: "4px",
+  color: "rgba(255, 255, 255, 0.7)",
+  "&:hover": {
+    color: "white",
+    background: "transparent",
+  },
+});
+
+export const ChatMessagesArea = styled(Box)({
+  flex: 1,
+  padding: "16px",
+  overflowY: "auto",
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+});
+
+export const ChatMessageBubble = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "isUser",
+})<{ isUser: boolean }>(({ isUser }) => ({
+  maxWidth: "80%",
+  padding: "12px",
+  borderRadius: "12px",
+  alignSelf: isUser ? "flex-end" : "flex-start",
+  background: isUser
+    ? "rgba(255, 0, 255, 0.2)"
+    : "rgba(0, 255, 255, 0.1)",
+  border: `1px solid ${isUser ? "rgba(255, 0, 255, 0.3)" : "rgba(0, 255, 255, 0.3)"}`,
+  color: "white",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  lineHeight: "1.5",
+  borderBottomRightRadius: isUser ? "2px" : "12px",
+  borderBottomLeftRadius: isUser ? "12px" : "2px",
+}));
+
+export const ChatOptionsContainer = styled(Box)({
+  padding: "16px",
+  borderTop: "1px solid rgba(0, 255, 255, 0.2)",
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+  background: "rgba(0, 0, 0, 0.4)",
+});
+
+export const ChatOptionButton = styled(Button)({
+  justifyContent: "flex-start",
+  textAlign: "left",
+  color: "#00ffff",
+  borderColor: "rgba(0, 255, 255, 0.3)",
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "12px",
+  textTransform: "none",
+  padding: "8px 12px",
+  borderRadius: "8px",
+  background: "rgba(0, 255, 255, 0.05)",
+  "&:hover": {
+    background: "rgba(0, 255, 255, 0.15)",
+    borderColor: "#00ffff",
+  },
+});
+
+export const ChatInputContainer = styled(Box)({
+  padding: "12px",
+  borderTop: "1px solid rgba(0, 255, 255, 0.2)",
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  background: "rgba(0, 0, 0, 0.4)",
+});
+
+export const ChatInput = styled(TextField)({
+  flex: 1,
+  "& .MuiOutlinedInput-root": {
+    background: "rgba(0, 0, 0, 0.3)",
+    borderRadius: "20px",
+    paddingRight: "8px",
+    "& fieldset": {
+      borderColor: "rgba(0, 255, 255, 0.3)",
+    },
+    "&:hover fieldset": {
+      borderColor: "rgba(0, 255, 255, 0.5)",
+    },
+    "&.Mui-focused fieldset": {
+      borderColor: "#00ffff",
+    },
+    "& input": {
+      color: "white",
+      fontFamily: "'Inter', sans-serif",
+      fontSize: "14px",
+      padding: "10px 16px",
+    },
+  },
+});
+
+export const SendButton = styled(IconButton)({
+  color: "#00ffff",
+  "&:hover": {
+    backgroundColor: "rgba(0, 255, 255, 0.1)",
+  },
+  "&.Mui-disabled": {
+    color: "rgba(0, 255, 255, 0.3)",
+  },
+});

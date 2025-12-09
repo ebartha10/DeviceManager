@@ -77,33 +77,6 @@ export class WebSocketClient {
     };
   }
 
-  subscribeToAll(callback: (data: RealtimeConsumption) => void): () => void {
-    if (!this.client?.connected) {
-      console.warn("WebSocket not connected, attempting to connect...");
-      this.connect().then(() => {
-        this.subscribeToAll(callback);
-      });
-      return () => {};
-    }
-
-    const topic = `/topic/consumption/all`;
-    const subscription = this.client.subscribe(topic, (message: Message) => {
-      try {
-        const data: RealtimeConsumption = JSON.parse(message.body);
-        callback(data);
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error);
-      }
-    });
-
-    this.subscriptions.set(topic, callback);
-
-    return () => {
-      subscription.unsubscribe();
-      this.subscriptions.delete(topic);
-    };
-  }
-
   disconnect(): void {
     if (this.client) {
       this.client.deactivate();

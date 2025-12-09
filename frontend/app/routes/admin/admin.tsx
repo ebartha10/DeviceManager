@@ -97,6 +97,7 @@ import {
   LogoutButton,
 } from "./StyledComponents";
 import { authApi } from "~/api";
+import { AdminChatPanel } from "./AdminChatPanel";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -160,18 +161,50 @@ export default function Admin() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [usersData, devicesData, currentUserData] = await Promise.all([
+      // Use Promise.allSettled to handle individual failures gracefully
+      const [usersResult, devicesResult, currentUserResult] = await Promise.allSettled([
         userApi.getAllUsers(),
         deviceApi.getAllDevices(),
         userApi.getUserById(tokenStorage.getUserId() || ""),
       ]);
-      setUsers(usersData);
-      setDevices(devicesData);
-      setTotalUsers(usersData.length);
-      setActiveDevices(devicesData.length);
-      setCurrentUser(currentUserData);
+      
+      // Handle users data
+      if (usersResult.status === "fulfilled") {
+        setUsers(usersResult.value);
+        setTotalUsers(usersResult.value.length);
+      } else {
+        console.error("Error loading users:", usersResult.reason);
+        setUsers([]);
+        setTotalUsers(0);
+      }
+      
+      // Handle devices data - don't crash if this fails
+      if (devicesResult.status === "fulfilled") {
+        setDevices(devicesResult.value);
+        setActiveDevices(devicesResult.value.length);
+      } else {
+        console.error("Error loading devices:", devicesResult.reason);
+        setDevices([]);
+        setActiveDevices(0);
+        // Show user-friendly error message
+        alert("Failed to load devices. Some features may be unavailable.");
+      }
+      
+      // Handle current user data
+      if (currentUserResult.status === "fulfilled") {
+        setCurrentUser(currentUserResult.value);
+      } else {
+        console.error("Error loading current user:", currentUserResult.reason);
+        setCurrentUser(null);
+      }
     } catch (error) {
-      console.error("Error loading data:", error);
+      console.error("Unexpected error loading data:", error);
+      // Set defaults to prevent crashes
+      setUsers([]);
+      setDevices([]);
+      setTotalUsers(0);
+      setActiveDevices(0);
+      setCurrentUser(null);
     } finally {
       setLoading(false);
     }
@@ -195,6 +228,7 @@ export default function Admin() {
         await loadData();
       } catch (error) {
         console.error("Error deleting device:", error);
+        alert("Failed to delete device. Please try again.");
       }
     }
   };
@@ -274,7 +308,7 @@ export default function Admin() {
     setLoadingUserDevices(true);
     try {
       const devices = await deviceApi.getDevicesForUser(user.id);
-      setUserDevices(devices);
+      setUserDevices(devices || []);
     } catch (error) {
       console.error("Error loading user devices:", error);
       alert("Failed to load user devices. Please try again.");
@@ -293,8 +327,13 @@ export default function Admin() {
         deviceId: selectedDeviceToAdd.id,
       });
       // Reload user devices
-      const devices = await deviceApi.getDevicesForUser(selectedUser.id);
-      setUserDevices(devices);
+      try {
+        const devices = await deviceApi.getDevicesForUser(selectedUser.id);
+        setUserDevices(devices || []);
+      } catch (reloadError) {
+        console.error("Error reloading user devices:", reloadError);
+        // Still clear the selection even if reload fails
+      }
       setSelectedDeviceToAdd(null);
     } catch (error) {
       console.error("Error adding device to user:", error);
@@ -312,8 +351,14 @@ export default function Admin() {
     try {
       await deviceApi.removeDeviceFromUser(selectedUser.id, deviceId);
       // Reload user devices
-      const devices = await deviceApi.getDevicesForUser(selectedUser.id);
-      setUserDevices(devices);
+      try {
+        const devices = await deviceApi.getDevicesForUser(selectedUser.id);
+        setUserDevices(devices || []);
+      } catch (reloadError) {
+        console.error("Error reloading user devices:", reloadError);
+        // Optimistically remove from UI if reload fails
+        setUserDevices(prev => prev.filter(d => d.id !== deviceId));
+      }
     } catch (error) {
       console.error("Error removing device from user:", error);
       alert("Failed to remove device from user. Please try again.");
@@ -322,9 +367,14 @@ export default function Admin() {
 
   // Get available devices (devices not already assigned to user)
   const getAvailableDevices = () => {
-    if (!selectedUser) return devices;
-    const assignedDeviceIds = userDevices.map(d => d.id);
-    return devices.filter(device => !assignedDeviceIds.includes(device.id));
+    try {
+      if (!selectedUser) return devices || [];
+      const assignedDeviceIds = (userDevices || []).map(d => d.id);
+      return (devices || []).filter(device => !assignedDeviceIds.includes(device.id));
+    } catch (error) {
+      console.error("Error getting available devices:", error);
+      return [];
+    }
   };
 
   const filteredUsers = users.filter((user) =>
@@ -332,7 +382,7 @@ export default function Admin() {
     user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredDevices = devices.filter((device) =>
+  const filteredDevices = (devices || []).filter((device) =>
     device.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     device.type?.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -809,6 +859,9 @@ export default function Admin() {
             </DialogCancelButton>
           </StyledDialogActions>
         </StyledDialog>
+
+        {/* Admin Chat Panel - Only visible on main dashboard */}
+        {isDashboard && <AdminChatPanel />}
       </MainContent>
     </AdminContainer>
   );

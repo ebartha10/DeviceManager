@@ -25,7 +25,6 @@ export const monitoringApi = {
     deviceId: string,
     date: string
   ): Promise<DailyEnergyConsumption> => {
-    // Monitoring service is accessible at /monitoring via Traefik
     return apiClient.get<DailyEnergyConsumption>(
       `/monitoring/energy-consumption/daily?deviceId=${deviceId}&date=${date}`
     );

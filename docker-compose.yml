@@ -59,6 +59,21 @@ services:
     networks:
       - demo_net
 
+   db-chat:
+    image: postgres
+    container_name: db-chat
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: chat-microservice
+    ports:
+      - "5437:5432"
+    volumes:
+      - my-db-chat:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
    device-microservice:
     image: devicemicro2
     container_name: device-microservice
@@ -135,6 +150,58 @@ services:
       - db-monitoring
       - rabbitmq
 
+   chat-microservice:
+    build:
+      context: ./chat-microservice/demo
+      dockerfile: Dockerfile
+    image: chatmicro2
+    container_name: chat-microservice
+    environment:
+      - DB_IP=db-chat
+      - DB_PORT=5432
+      - DB_DBNAME=chat-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=kalo
+      - RABBITMQ_PASSWORD=kalo
+      - GEMINI_API_KEY=AIzaSyCqLWbFfXi8dZTpX92fVoXbbVeIlddmZhQ
+      - USER_MICROSERVICE_BASE_URL=http://user-microservice:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat.rule=Host(`localhost`) && PathPrefix(`/chat`)"
+      - "traefik.http.routers.chat.entrypoints=web"
+      - "traefik.http.services.chat.loadbalancer.server.port=8080"
+    networks:
+      - demo_net
+    depends_on:
+      - db-chat
+      - rabbitmq
+
+   websocket-microservice:
+    build:
+      context: ./websocket-microservice/demo
+      dockerfile: Dockerfile
+    image: websocketmicro2
+    container_name: websocket-microservice
+    environment:
+      - PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=kalo
+      - RABBITMQ_PASSWORD=kalo
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.websocket.rule=Host(`localhost`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.websocket.entrypoints=web"
+      - "traefik.http.services.websocket.loadbalancer.server.port=8080"
+    networks:
+      - demo_net
+    depends_on:
+      - rabbitmq
+
    frontend:
     build:
       context: ./frontend
@@ -207,6 +274,7 @@ volumes:
   my-db-user:
   my-db-auth:
   my-db-monitoring:
+  my-db-chat:
   rabbitmq-lib:
     driver: local
   rabbitmq-log:
