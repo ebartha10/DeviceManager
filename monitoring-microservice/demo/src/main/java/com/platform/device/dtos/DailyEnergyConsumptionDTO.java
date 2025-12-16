@@ -13,10 +13,10 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.ToString
 public class DailyEnergyConsumptionDTO {
     private UUID deviceId;
     private LocalDate date;
     private Double totalConsumption;
     private List<HourlyConsumptionDTO> hourlyConsumptions;
 }
-

@@ -3,6 +3,9 @@ api:
   dashboard: true
   insecure: true
 
+log:
+  level: DEBUG
+
 entryPoints:
   web:
     address: ":80"
@@ -13,11 +16,8 @@ providers:
   docker:
     exposedByDefault: false
   file:
-    filename: /etc/traefik/dynamic/path.yml
+    directory: /etc/traefik/dynamic
     watch: true
 
-
-log:
-  level: INFO
 
 accessLog: {}

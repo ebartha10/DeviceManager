@@ -970,3 +970,97 @@ export const SendButton = styled(IconButton)({
     color: "rgba(0, 255, 255, 0.3)",
   },
 });
+
+// Notification components
+export const NotificationContainer = styled(Box)({
+  position: "fixed",
+  top: "20px",
+  right: "20px",
+  zIndex: 9999,
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  maxWidth: "400px",
+});
+
+export const NotificationCard = styled(Paper)({
+  background: "rgba(0, 0, 0, 0.95)",
+  border: "2px solid #ff00ff",
+  borderRadius: "12px",
+  padding: "16px",
+  boxShadow: "0 4px 20px rgba(255, 0, 255, 0.4)",
+  animation: "slideInRight 0.3s ease-out",
+  "@keyframes slideInRight": {
+    from: {
+      transform: "translateX(100%)",
+      opacity: 0,
+    },
+    to: {
+      transform: "translateX(0)",
+      opacity: 1,
+    },
+  },
+});
+
+export const NotificationHeader = styled(Box)({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  marginBottom: "8px",
+});
+
+export const NotificationTitle = styled(Typography)({
+  fontFamily: "'Orbitron', sans-serif",
+  fontSize: "16px",
+  fontWeight: 700,
+  color: "#ff00ff",
+  letterSpacing: "1px",
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+});
+
+export const NotificationCloseButton = styled(IconButton)({
+  color: "rgba(255, 255, 255, 0.6)",
+  padding: "4px",
+  "&:hover": {
+    backgroundColor: "rgba(255, 0, 255, 0.1)",
+    color: "#ff00ff",
+  },
+});
+
+export const NotificationMessage = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "14px",
+  color: "rgba(255, 255, 255, 0.9)",
+  lineHeight: "1.5",
+  marginBottom: "8px",
+});
+
+export const NotificationDetails = styled(Box)({
+  display: "flex",
+  flexDirection: "column",
+  gap: "4px",
+  marginTop: "8px",
+  paddingTop: "8px",
+  borderTop: "1px solid rgba(255, 0, 255, 0.2)",
+});
+
+export const NotificationDetailRow = styled(Box)({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+});
+
+export const NotificationDetailLabel = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "12px",
+  color: "rgba(255, 255, 255, 0.6)",
+});
+
+export const NotificationDetailValue = styled(Typography)({
+  fontFamily: "'Inter', sans-serif",
+  fontSize: "12px",
+  fontWeight: 600,
+  color: "#00ffff",
+});

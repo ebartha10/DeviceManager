@@ -173,6 +173,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.chat.rule=Host(`localhost`) && PathPrefix(`/chat`)"
       - "traefik.http.routers.chat.entrypoints=web"
+      - "traefik.http.routers.chat.priority=10"
       - "traefik.http.services.chat.loadbalancer.server.port=8080"
     networks:
       - demo_net
@@ -196,6 +197,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.websocket.rule=Host(`localhost`) && PathPrefix(`/ws`)"
       - "traefik.http.routers.websocket.entrypoints=web"
+      - "traefik.http.routers.websocket.priority=10"
       - "traefik.http.services.websocket.loadbalancer.server.port=8080"
     networks:
       - demo_net
@@ -212,8 +214,9 @@ services:
       - VITE_API_BASE_URL=http://localhost
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`localhost`) && !PathPrefix(`/api/auth`) && !PathPrefix(`/users`) && !PathPrefix(`/device`) && !PathPrefix(`/api-docs`) && !PathPrefix(`/monitoring`)"
+      - "traefik.http.routers.frontend.rule=Host(`localhost`) && !PathPrefix(`/api/auth`) && !PathPrefix(`/users`) && !PathPrefix(`/device`) && !PathPrefix(`/api-docs`) && !PathPrefix(`/monitoring`) && !PathPrefix(`/ws`) && !PathPrefix(`/chat`)"
       - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     networks:
       - demo_net

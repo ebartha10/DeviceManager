@@ -31,6 +31,13 @@ public class RabbitMQConfig {
     public static final String CHAT_MESSAGE_ROUTING_KEY = "chat.message";
     public static final String WEBSOCKET_CHAT_QUEUE = "websocket.chat.queue";
 
+    public static final String CHAT_REQUESTS_EXCHANGE = "chat.requests.exchange";
+    public static final String CHAT_REQUEST_ROUTING_KEY = "chat.request";
+
+    public static final String OVERCONSUMPTION_NOTIFICATIONS_EXCHANGE = "overconsumption.notifications.exchange";
+    public static final String OVERCONSUMPTION_NOTIFICATION_ROUTING_KEY = "overconsumption.notification";
+    public static final String WEBSOCKET_OVERCONSUMPTION_QUEUE = "websocket.overconsumption.queue";
+
     @Bean
     public Queue monitoringUserQueue() {
         return QueueBuilder.durable(MONITORING_USER_QUEUE).build();
@@ -52,6 +59,11 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Queue websocketOverconsumptionQueue() {
+        return QueueBuilder.durable(WEBSOCKET_OVERCONSUMPTION_QUEUE).build();
+    }
+
+    @Bean
     public TopicExchange userEventsExchange() {
         return new TopicExchange(USER_EVENTS_EXCHANGE);
     }
@@ -69,6 +81,16 @@ public class RabbitMQConfig {
     @Bean
     public TopicExchange chatEventsExchange() {
         return new TopicExchange(CHAT_EVENTS_EXCHANGE);
+    }
+
+    @Bean
+    public TopicExchange chatRequestsExchange() {
+        return new TopicExchange(CHAT_REQUESTS_EXCHANGE);
+    }
+
+    @Bean
+    public TopicExchange overconsumptionNotificationsExchange() {
+        return new TopicExchange(OVERCONSUMPTION_NOTIFICATIONS_EXCHANGE);
     }
 
     @Bean
@@ -120,6 +142,14 @@ public class RabbitMQConfig {
     }
 
     @Bean
+    public Binding websocketOverconsumptionBinding() {
+        return BindingBuilder
+                .bind(websocketOverconsumptionQueue())
+                .to(overconsumptionNotificationsExchange())
+                .with(OVERCONSUMPTION_NOTIFICATION_ROUTING_KEY);
+    }
+
+    @Bean
     public MessageConverter jsonMessageConverter() {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -133,4 +163,139 @@ public class RabbitMQConfig {
         return template;
     }
 }
+
+
+    @Bean
+
+    public Binding monitoringUserCreateBinding() {
+
+        return BindingBuilder
+
+                .bind(monitoringUserQueue())
+
+                .to(userEventsExchange())
+
+                .with(USER_CREATE_ROUTING_KEY);
+
+    }
+
+
+
+    @Bean
+
+    public Binding monitoringUserDeleteBinding() {
+
+        return BindingBuilder
+
+                .bind(monitoringUserQueue())
+
+                .to(userEventsExchange())
+
+                .with(USER_DELETE_ROUTING_KEY);
+
+    }
+
+
+
+    @Bean
+
+    public Binding monitoringDeviceCreateBinding() {
+
+        return BindingBuilder
+
+                .bind(monitoringDeviceQueue())
+
+                .to(deviceEventsExchange())
+
+                .with(DEVICE_CREATE_ROUTING_KEY);
+
+    }
+
+
+
+    @Bean
+
+    public Binding monitoringDeviceDeleteBinding() {
+
+        return BindingBuilder
+
+                .bind(monitoringDeviceQueue())
+
+                .to(deviceEventsExchange())
+
+                .with(DEVICE_DELETE_ROUTING_KEY);
+
+    }
+
+
+
+    @Bean
+
+    public Binding monitoringMeasurementsBinding() {
+
+        return BindingBuilder
+
+                .bind(monitoringMeasurementsQueue())
+
+                .to(deviceMeasurementsExchange())
+
+                .with(DEVICE_MEASUREMENT_ROUTING_KEY);
+
+    }
+
+
+
+    @Bean
+
+    public Binding websocketChatBinding() {
+
+        return BindingBuilder
+
+                .bind(websocketChatQueue())
+
+                .to(chatEventsExchange())
+
+                .with(CHAT_MESSAGE_ROUTING_KEY);
+
+    }
+
+
+    @Bean
+    public Binding websocketOverconsumptionBinding() {
+        return BindingBuilder
+                .bind(websocketOverconsumptionQueue())
+                .to(overconsumptionNotificationsExchange())
+                .with(OVERCONSUMPTION_NOTIFICATION_ROUTING_KEY);
+    }
+
+
+    @Bean
+
+    public MessageConverter jsonMessageConverter() {
+
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        objectMapper.registerModule(new JavaTimeModule());
+
+        return new Jackson2JsonMessageConverter(objectMapper);
+
+    }
+
+
+
+    @Bean
+
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+
+        RabbitTemplate template = new RabbitTemplate(connectionFactory);
+
+        template.setMessageConverter(jsonMessageConverter());
+
+        return template;
+
+    }
+
+}
+
+
 

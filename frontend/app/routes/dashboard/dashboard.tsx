@@ -76,6 +76,7 @@ import {
 } from "./StyledComponents";
 import { DeviceMonitoring } from "./DeviceMonitoring";
 import { SupportChat } from "./SupportChat";
+import { OverconsumptionNotification } from "./OverconsumptionNotification";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -462,6 +463,9 @@ export default function Dashboard() {
 
         {/* Support Chat Widget - Only visible on main dashboard for normal users */}
         {isDashboard && !monitoringDevice && <SupportChat />}
+
+        {/* Overconsumption Notifications - Always visible when user has devices */}
+        {userDevices.length > 0 && <OverconsumptionNotification userDevices={userDevices} />}
       </MainContent>
     </DashboardContainer>
   );

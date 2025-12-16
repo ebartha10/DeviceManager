@@ -96,7 +96,7 @@ http:
       middlewares:
         - cors-headers # Add CORS headers
         - strip-monitoring-prefix # Remove /monitoring prefix before forwarding
-      service: monitoring-service
+      service: monitoring-swarm-service
       priority: 20
 
     monitoring-api:
@@ -108,6 +108,45 @@ http:
         - auth-forward # Validate JWT via auth service and forward headers
         - strip-monitoring-prefix # Remove /monitoring prefix before forwarding
       service: monitoring-service
+
+    # OPTIONS requests for CORS preflight - Chat API
+    chat-api-options:
+      rule: "Host(`localhost`) && PathPrefix(`/chat`) && Method(`OPTIONS`)"
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers
+      service: chat-service
+      priority: 10
+
+    # WebSocket endpoint for chat - bypass auth-forward as WebSocket connections handle auth differently
+    # This must come BEFORE the general chat-api route to match first
+    chat-websocket:
+      rule: "Host(`localhost`) && PathPrefix(`/ws/chat`)" # Match WebSocket connections and SockJS /info endpoint
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers # Add CORS headers
+      service: websocket-service
+      priority: 20
+
+    # Chat REST API endpoint
+    chat-api:
+      rule: "Host(`localhost`) && PathPrefix(`/chat`) && !PathPrefix(`/ws/chat`)" # Match requests to localhost with /chat prefix, but NOT /ws/chat
+      entryPoints:
+        - web
+      middlewares:
+        - cors-headers # Add CORS headers
+        - auth-forward # Validate JWT via auth service and forward headers
+      service: chat-service
+
+    # Frontend Router
+    frontend:
+      rule: "Host(`localhost`)" 
+      entryPoints:
+        - web
+      service: frontend-service
+      priority: 1 # Lowest priority, fallback for everything else
 
   middlewares:
     strip-device-prefix: # Middleware to remove /device prefix
@@ -202,4 +241,24 @@ http:
     monitoring-service:
       loadBalancer:
         servers:
-          - url: "http://monitoring-microservice:8080" # Monitoring microservice container
+          - url: "http://load-balancer:8080" # Custom Java Load Balancer
+
+    monitoring-swarm-service:
+      loadBalancer:
+        servers:
+          - url: "http://monitoring-microservice:8080" # Direct access to monitoring microservice (for WebSockets)
+
+    chat-service:
+      loadBalancer:
+        servers:
+          - url: "http://chat-microservice:8080" # Chat microservice container
+
+    websocket-service:
+      loadBalancer:
+        servers:
+          - url: "http://websocket-microservice:8080" # WebSocket microservice container
+
+    frontend-service:
+      loadBalancer:
+        servers:
+          - url: "http://demo_stack_frontend:3000" # Frontend container (swarm service name)

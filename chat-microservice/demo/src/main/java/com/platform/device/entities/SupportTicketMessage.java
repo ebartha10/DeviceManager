@@ -1,5 +1,6 @@
 package com.platform.device.entities;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,6 +29,7 @@ public class SupportTicketMessage {
 
     private String sender; // "user", "admin", "bot"
 
+    @Column(columnDefinition = "TEXT")
     private String messageContent;
 
     private LocalDateTime timestamp;

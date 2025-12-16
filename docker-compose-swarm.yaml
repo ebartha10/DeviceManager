@@ -1,0 +1,324 @@
+version: '3.8'
+
+services:
+  # --- Databases ---
+  db-device:
+    image: postgres:15-alpine
+    deploy:
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: device-microservice
+    ports:
+      - "5433:5432"
+    volumes:
+      - my-db-device:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
+  db-user:
+    image: postgres:13-alpine
+    deploy:
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: user-microservice
+    ports:
+      - "5434:5432"
+    volumes:
+      - my-db-user:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
+  db-auth:
+    image: postgres:13-alpine
+    deploy:
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: auth-microservice
+    ports:
+      - "5435:5432"
+    volumes:
+      - my-db-auth:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
+  db-monitoring:
+    image: postgres:13-alpine
+    deploy:
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: monitoring-microservice
+    ports:
+      - "5436:5432"
+    volumes:
+      - my-db-monitoring:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
+  db-chat:
+    image: postgres:13-alpine
+    deploy:
+      replicas: 1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: chat-microservice
+    ports:
+      - "5437:5432"
+    volumes:
+      - my-db-chat:/var/lib/postgresql/data
+    networks:
+      - demo_net
+
+  # --- Message Broker ---
+  rabbitmq:
+    image: rabbitmq:management
+    deploy:
+      replicas: 1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: kalo
+      RABBITMQ_DEFAULT_PASS: kalo
+    configs:
+      - source: rabbitmq-plugins
+        target: /etc/rabbitmq/enabled_plugins
+    volumes:
+      - rabbitmq-lib:/var/lib/rabbitmq/
+      - rabbitmq-log:/var/log/rabbitmq
+    networks:
+      - demo_net
+
+  # --- Microservices ---
+  device-microservice:
+    image: devicemicro2
+    deploy:
+      replicas: 1
+    environment:
+      - DB_IP=db-device
+      - DB_PORT=5432
+      - DB_DBNAME=device-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+    networks:
+      - demo_net
+
+  user-microservice:
+    image: usermicro2
+    deploy:
+      replicas: 1
+    environment:
+      - DB_IP=db-user
+      - DB_PORT=5432
+      - DB_DBNAME=user-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - DEVICE_MS_BASE_URL=http://device-microservice:8080
+    networks:
+      - demo_net
+
+  auth-microservice:
+    build:
+      context: ./auth-microservice/demo
+      dockerfile: Dockerfile
+    image: authmicro2
+    deploy:
+      replicas: 1
+    environment:
+      - DB_IP=db-auth
+      - DB_PORT=5432
+      - DB_DBNAME=auth-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - PORT=8080
+      - DEVICE_MS_BASE_URL=http://device-microservice:8080
+      - USER_MICROSERVICE_BASE_URL=http://user-microservice:8080
+    labels:
+      - "traefik.enable=true"
+      # Configuration handled in path.yml but keeping basic labels for consistency if needed by specific Traefik setup
+      # However, since path.yml is the main router config, these might be redundant but harmless.
+    networks:
+      - demo_net
+    depends_on:
+      - db-auth
+
+  # Custom Java Load Balancer
+  load-balancer:
+    build: 
+      context: ./load-balancer/demo
+      dockerfile: Dockerfile
+    image: loadbalancer
+    deploy:
+      replicas: 1
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=kalo
+      - RABBITMQ_PASSWORD=kalo
+    networks:
+      - demo_net
+    labels:
+      - "traefik.enable=true"
+      # Note: Routing is handled in dynamic/path.yml pointing to this service
+    depends_on:
+      - rabbitmq
+
+  # Monitoring Microservice (Replicated)
+  monitoring-microservice:
+    build:
+      context: ./monitoring-microservice/demo
+      dockerfile: Dockerfile
+    image: monitoringmicro2
+    deploy:
+      replicas: 3
+    environment:
+      - DB_IP=db-monitoring
+      - DB_PORT=5432
+      - DB_DBNAME=monitoring-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=kalo
+      - RABBITMQ_PASSWORD=kalo
+      - USER_MICROSERVICE_BASE_URL=http://user-microservice:8080
+      - REPLICA_ID={{.Task.Slot}}
+    labels:
+      - "traefik.enable=false" # Hidden behind load-balancer
+    networks:
+      - demo_net
+    depends_on:
+      - db-monitoring
+      - rabbitmq
+
+  chat-microservice:
+    build:
+      context: ./chat-microservice/demo
+      dockerfile: Dockerfile
+    image: chatmicro2
+    deploy:
+      replicas: 1
+    environment:
+      - DB_IP=db-chat
+      - DB_PORT=5432
+      - DB_DBNAME=chat-microservice
+      - DB_USER=postgres
+      - DB_PASSWORD=admin
+      - PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=kalo
+      - RABBITMQ_PASSWORD=kalo
+      - GEMINI_API_KEY=AIzaSyCqLWbFfXi8dZTpX92fVoXbbVeIlddmZhQ
+      - USER_MICROSERVICE_BASE_URL=http://user-microservice:8080
+    labels:
+      - "traefik.enable=true"
+    networks:
+      - demo_net
+    depends_on:
+      - db-chat
+      - rabbitmq
+
+  websocket-microservice:
+    build:
+      context: ./websocket-microservice/demo
+      dockerfile: Dockerfile
+    image: websocketmicro2
+    deploy:
+      replicas: 1
+    environment:
+      - PORT=8080
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USERNAME=kalo
+      - RABBITMQ_PASSWORD=kalo
+    labels:
+      - "traefik.enable=true"
+    networks:
+      - demo_net
+    depends_on:
+      - rabbitmq
+
+  api-docs:
+    build:
+      context: ./api-docs
+      dockerfile: Dockerfile
+    image: api-docs
+    deploy:
+      replicas: 1
+    networks:
+      - demo_net
+
+  # --- Frontend ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: frontend
+    deploy:
+      replicas: 1
+    environment:
+      - VITE_API_BASE_URL=http://localhost
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - demo_net
+
+  # --- Ingress ---
+  traefik:
+    image: traefik:v3.0
+    command:
+      - "--log.level=DEBUG"
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.swarm=true"
+      - "--providers.swarm.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "./dynamic:/etc/traefik/dynamic:ro" 
+      - "./load-balancer/demo/certs:/etc/traefik/certs:ro" # Certs generated in ./certs but path might be ./certs in root
+    deploy:
+      mode: global
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - demo_net
+
+configs:
+  rabbitmq-plugins:
+    file: ./rabbitmq_enabled_plugins
+
+volumes:
+  my-db-device:
+  my-db-user:
+  my-db-auth:
+  my-db-monitoring:
+  my-db-chat:
+  rabbitmq-lib:
+    driver: local
+  rabbitmq-log:
+    driver: local
+
+networks:
+  demo_net:
+    driver: overlay
+    attachable: true

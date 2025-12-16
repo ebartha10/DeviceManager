@@ -163,7 +163,8 @@ export function AdminChat({ ticket, onClose }: AdminChatProps) {
 
     try {
       // Send to backend - response will come via WebSocket
-      await chatApi.sendAdminMessage(ticket.ticketId, messageText);
+      // await chatApi.sendAdminMessage(ticket.ticketId, messageText);
+      chatWebSocketClient.sendAdminMessage(ticket.ticketId, messageText);
     } catch (error) {
       console.error("Failed to send admin message:", error);
       // Remove optimistic message on error
@@ -239,4 +240,6 @@ export function AdminChat({ ticket, onClose }: AdminChatProps) {
     </ChatWindowContainer>
   );
 }
+
+
 

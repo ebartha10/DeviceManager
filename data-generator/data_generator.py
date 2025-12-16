@@ -35,7 +35,7 @@ class DeviceSimulator:
         self.device_id = device_id
         self.device_name = device_name
         # Random base load between 0.1 and 0.5 kWh per 10-minute interval
-        self.base_load = random.uniform(0.1, 0.5)
+        self.base_load = random.uniform(40, 50)
         logger.info(f"Initialized simulator for device {device_name} ({device_id}) with base load {self.base_load:.4f}")
 
     def generate_measurement(self, timestamp):
@@ -64,53 +64,30 @@ class DeviceSimulator:
             "measurementValue": measurement
         }
 
-def get_auth_token():
-    # Try to register first (idempotent-ish via error handling)
-    register_url = f"{API_BASE_URL}/api/auth/register"
-    login_url = f"{API_BASE_URL}/api/auth/login"
-    
-    user_data = {
-        "email": "generator@test.com",
-        "password": "password",
-        "fullName": "Data Generator",
-        "role": "ADMIN"
-    }
-    
-    auth_data = {
-        "email": "generator@test.com",
-        "password": "password"
-    }
 
-    try:
-        # Attempt registration
-        logger.info("Attempting registration...")
-        requests.post(register_url, json=user_data)
-        # Ignore result, if it fails it might already exist
-    except Exception as e:
-        logger.warning(f"Registration request failed (might be expected): {e}")
 
-    try:
-        # Login
-        logger.info("Logging in...")
-        response = requests.post(login_url, json=auth_data)
-        response.raise_for_status()
-        token = response.json().get("token")
-        logger.info("Login successful")
-        return token
-    except Exception as e:
-        logger.error(f"Login failed: {e}")
-        return None
-
-def get_devices(token):
-    url = f"{API_BASE_URL}/device/get-all"
-    headers = {"Authorization": f"Bearer {token}"}
+def get_devices_from_file():
+    file_path = "device_ids.txt"
+    devices = []
     
+    if not os.path.exists(file_path):
+        logger.error(f"Device ID file not found: {file_path}")
+        return []
+        
     try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
+        with open(file_path, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                device_id = line.strip()
+                if device_id:
+                    # Validate UUID format optionally, or just trust the file
+                    devices.append({
+                        "id": device_id,
+                        "name": f"Device-{device_id[:8]}" # Placeholder name
+                    })
+        return devices
     except Exception as e:
-        logger.error(f"Failed to fetch devices: {e}")
+        logger.error(f"Failed to read device IDs from file: {e}")
         return []
 
 def setup_rabbitmq():
@@ -121,22 +98,14 @@ def setup_rabbitmq():
 def main():
     logger.info("Starting Data Generator...")
     
-    # 1. Authenticate
-    token = get_auth_token()
-    if not token:
-        logger.error("Could not authenticate. Exiting.")
+    # 1. Get Devices from file
+    devices_data = get_devices_from_file()
+    
+    if not devices_data:
+        logger.warning("No devices found in file. Exiting.")
         return
 
-    # 2. Get Devices
-    devices_data = get_devices(token)
-    if not devices_data:
-        logger.warning("No devices found. Waiting or exiting...")
-        # Could retry here, but for now we'll just exit or wait
-        if not devices_data:
-            logger.info("No devices to simulate. Exiting.")
-            return
-
-    logger.info(f"Found {len(devices_data)} devices.")
+    logger.info(f"Loaded {len(devices_data)} devices from file.")
     
     simulators = [DeviceSimulator(d['id'], d['name']) for d in devices_data]
 
