@@ -21,23 +21,21 @@ public class DeviceMeasurementListener {
     @Autowired
     private DeviceRepository deviceRepository;
 
-    @RabbitListener(queues = RabbitMQConfig.MONITORING_MEASUREMENTS_QUEUE)
+    @RabbitListener(queues = "#{rabbitMQConfig.monitoringMeasurementsQueue().name}")
     public void handleDeviceMeasurement(DeviceMeasurementMessage message) {
         UUID deviceId = message.getDeviceId();
-        
+
         if (!deviceRepository.existsById(deviceId)) {
             LOGGER.warn("Received measurement for unknown device {}, skipping", deviceId);
             return;
         }
 
         LOGGER.info("Received device measurement: device={}, timestamp={}, value={}",
-            deviceId, message.getTimestamp(), message.getMeasurementValue());
+                deviceId, message.getTimestamp(), message.getMeasurementValue());
 
         hourlyEnergyConsumptionService.processMeasurement(
-            deviceId,
-            message.getTimestamp(),
-            message.getMeasurementValue()
-        );
+                deviceId,
+                message.getTimestamp(),
+                message.getMeasurementValue());
     }
 }
-

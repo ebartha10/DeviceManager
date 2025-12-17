@@ -77,14 +77,16 @@ export function SupportChat() {
 
   // WebSocket subscription for real-time messages
   useEffect(() => {
-    if (!isOpen || !isLiveChat) {
-      // Clean up subscription when closing or switching away from live chat
+    if (!isOpen) {
+      // Clean up subscription when closing
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
       return;
     }
+    // Subscribing always when open, regardless of isLiveChat, to receive responses for predefined topics too
+
 
     const userId = tokenStorage.getUserId();
     if (!userId) return;
@@ -106,14 +108,19 @@ export function SupportChat() {
         const unsubscribe = chatWebSocketClient.subscribeToUserChat(
           userId,
           (wsMessage: ChatWebSocketMessage) => {
+            console.log("[SupportChat] Received WebSocket message:", wsMessage);
             // Only add messages that aren't already in the list
             setMessages((prev) => {
+              console.log("[SupportChat] Current messages count:", prev.length);
               const messageId = `${wsMessage.ticketId}-${wsMessage.timestamp}`;
               const wsTimestamp = new Date(wsMessage.timestamp).getTime();
               
               // Check for duplicate by ID
               const existsById = prev.some((m) => m.id === messageId);
-              if (existsById) return prev;
+              if (existsById) {
+                console.log("[SupportChat] Duplicate by ID, skipping:", messageId);
+                return prev;
+              }
 
               // Check for duplicate by content, sender, and timestamp (within 1 second)
               // This catches exact duplicates even if IDs differ
@@ -124,7 +131,7 @@ export function SupportChat() {
               );
               
               if (isDuplicate) {
-                console.log("Duplicate message detected, skipping:", wsMessage.text);
+                console.log("[SupportChat] Duplicate by content, skipping:", wsMessage.text);
                 return prev;
               }
 
@@ -137,6 +144,7 @@ export function SupportChat() {
                 );
                 
                 if (optimisticIndex !== -1) {
+                  console.log("[SupportChat] Replacing optimistic user message");
                   // Replace optimistic message with real WebSocket message
                   const updated = [...prev];
                   updated[optimisticIndex] = {
@@ -155,6 +163,7 @@ export function SupportChat() {
                 pendingResponseTimeoutRef.current = null;
               }
 
+              console.log("[SupportChat] Adding new message:", wsMessage.sender, wsMessage.text);
               return [
                 ...prev,
                 {
@@ -179,7 +188,7 @@ export function SupportChat() {
         unsubscribeRef.current = null;
       }
     };
-  }, [isOpen, isLiveChat]);
+  }, [isOpen]); // Removed isLiveChat dependency
 
   useEffect(() => {
     scrollToBottom();
@@ -211,64 +220,46 @@ export function SupportChat() {
     if (!overrideMessage) setInputValue("");
     setIsSending(true);
 
-    // Add user message immediately (optimistic update) - but skip in live chat mode
-    // since WebSocket will deliver it, avoiding duplicates
+    // Add user message immediately (optimistic update) - removed to rely on WebSocket echo
+    // This prevents duplicates and ensures the server processed it.
     let userMsg: Message | null = null;
-    if (!isLiveChat) {
-      userMsg = {
-        id: `temp-${Date.now()}`,
-        text: messageText,
-        sender: "user",
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, userMsg!]);
-    }
+
 
     try {
-      // Send to microservice
-      const response = await chatApi.sendMessage(messageText);
-      
-      // Only add REST response if NOT in live chat mode (predefined topics)
-      // In live chat mode, WebSocket will handle the response to avoid duplicates
-      if (!isLiveChat) {
-        const botMsg: Message = {
-          id: `bot-${Date.now()}`,
-          text: response.text,
-          sender: response.sender as "user" | "bot" | "admin",
-          timestamp: new Date(response.timestamp),
-        };
-        setMessages((prev) => [...prev, botMsg]);
-      } else {
-        // In live chat mode, set a fallback timeout in case WebSocket is delayed
-        // Clear any existing timeout
-        if (pendingResponseTimeoutRef.current) {
-          clearTimeout(pendingResponseTimeoutRef.current);
-        }
+      // Send via WebSocket (including for predefined topics)
+      const userId = tokenStorage.getUserId();
+      if (userId) {
+        // If we are selecting a predefined topic (not live chat yet), 
+        // we send the message via WebSocket. The backend will process it 
+        // and return a response (e.g. predefined answer) via WebSocket.
+        // However, if we're not in live chat, we might miss the response if we're not subscribed?
+        // Wait, we are subscribed in useEffect if isOpen is true, but we added `!isLiveChat` condition to return early.
+        // We need to ensure we are subscribed even if not isLiveChat if we want to receive responses for predefined topics.
         
-        const responseId = `bot-${Date.now()}`;
-        pendingResponseTimeoutRef.current = setTimeout(() => {
-          // Fallback: if WebSocket hasn't delivered after 2 seconds, use REST response
-          setMessages((prev) => {
-            // Check if message already exists (from WebSocket)
-            const exists = prev.some((m) => 
-              m.text === response.text && 
-              m.sender === response.sender && 
-              Math.abs(new Date(m.timestamp).getTime() - new Date(response.timestamp).getTime()) < 2000
-            );
-            if (exists) return prev;
-            
-            const botMsg: Message = {
-              id: responseId,
-              text: response.text,
-              sender: response.sender as "user" | "bot" | "admin",
-              timestamp: new Date(response.timestamp),
-            };
-            return [...prev, botMsg];
-          });
-          pendingResponseTimeoutRef.current = null;
-        }, 2000);
+        // Actually, the previous logic was: if !isLiveChat, use REST.
+        // Now we want to use WebSocket for EVERYTHING.
+        // So we must subscribe to UserChat when isOpen is true, regardless of isLiveChat.
+        
+        chatWebSocketClient.sendMessage(userId, messageText);
+      } else {
+        console.error("No user ID found for WebSocket message");
+        throw new Error("No user ID found");
       }
-      // If WebSocket is active (isLiveChat = true), response will come via WebSocket
+      
+      // Optimistic update for USER message (only if NOT in live chat to avoid duplicates if we decide to keep that logic?
+      // Or just rely on WebSocket echo for everything to be consistent?)
+      // The user previously said: "the sender sees his message twice... make it update after the static requests (without websocket)"
+      // But now "I want to have websocket session... sends it back to the frontend".
+      // This implies the backend will ECHO the user message back.
+      // So we should NOT add optimistic update, and wait for the echo.
+      
+      // Fallback timeout just in case
+      if (pendingResponseTimeoutRef.current) {
+        clearTimeout(pendingResponseTimeoutRef.current);
+      }
+      // We don't really have a good fallback if we don't use REST at all.
+      // If WS fails, we just don't see the message.
+      
     } catch (error) {
       console.error("Failed to send message:", error);
       // Remove optimistic message on error (only if it was added)

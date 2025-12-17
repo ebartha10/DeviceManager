@@ -7,11 +7,15 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
+
+    @Value("${REPLICA_ID:1}")
+    private String replicaId;
 
     public static final String USER_EVENTS_EXCHANGE = "user.events.exchange";
     public static final String USER_CREATE_ROUTING_KEY = "user.create";
@@ -25,7 +29,12 @@ public class RabbitMQConfig {
 
     public static final String DEVICE_MEASUREMENTS_EXCHANGE = "device.measurements.exchange";
     public static final String DEVICE_MEASUREMENT_ROUTING_KEY = "device.measurement";
-    public static final String MONITORING_MEASUREMENTS_QUEUE = "monitoring.measurements.queue";
+    // Changed: each replica consumes from its own ingest queue
+    public static final String MONITORING_MEASUREMENTS_QUEUE_PREFIX = "ingest.queue.";
+
+    public static final String OVERCONSUMPTION_NOTIFICATIONS_EXCHANGE = "overconsumption.notifications.exchange";
+    public static final String OVERCONSUMPTION_NOTIFICATION_ROUTING_KEY = "overconsumption.notification";
+    public static final String WEBSOCKET_OVERCONSUMPTION_QUEUE = "websocket.overconsumption.queue";
 
     @Bean
     public Queue monitoringUserQueue() {
@@ -37,9 +46,22 @@ public class RabbitMQConfig {
         return QueueBuilder.durable(MONITORING_DEVICE_QUEUE).build();
     }
 
+    /**
+     * Each replica consumes from its own ingest queue based on REPLICA_ID
+     * Replica 1 -> ingest.queue.1
+     * Replica 2 -> ingest.queue.2
+     * Replica 3 -> ingest.queue.3
+     */
     @Bean
     public Queue monitoringMeasurementsQueue() {
-        return QueueBuilder.durable(MONITORING_MEASUREMENTS_QUEUE).build();
+        String queueName = MONITORING_MEASUREMENTS_QUEUE_PREFIX + replicaId;
+        System.out.println("Monitoring Replica " + replicaId + " binding to queue: " + queueName);
+        return QueueBuilder.durable(queueName).build();
+    }
+
+    @Bean
+    public Queue websocketOverconsumptionQueue() {
+        return QueueBuilder.durable(WEBSOCKET_OVERCONSUMPTION_QUEUE).build();
     }
 
     @Bean
@@ -55,6 +77,11 @@ public class RabbitMQConfig {
     @Bean
     public TopicExchange deviceMeasurementsExchange() {
         return new TopicExchange(DEVICE_MEASUREMENTS_EXCHANGE);
+    }
+
+    @Bean
+    public TopicExchange overconsumptionNotificationsExchange() {
+        return new TopicExchange(OVERCONSUMPTION_NOTIFICATIONS_EXCHANGE);
     }
 
     @Bean
@@ -89,12 +116,15 @@ public class RabbitMQConfig {
                 .with(DEVICE_DELETE_ROUTING_KEY);
     }
 
+    // Note: No binding for measurements queue to the exchange
+    // The load balancer directly pushes to the ingest queues
+
     @Bean
-    public Binding monitoringMeasurementsBinding() {
+    public Binding websocketOverconsumptionBinding() {
         return BindingBuilder
-                .bind(monitoringMeasurementsQueue())
-                .to(deviceMeasurementsExchange())
-                .with(DEVICE_MEASUREMENT_ROUTING_KEY);
+                .bind(websocketOverconsumptionQueue())
+                .to(overconsumptionNotificationsExchange())
+                .with(OVERCONSUMPTION_NOTIFICATION_ROUTING_KEY);
     }
 
     @Bean
@@ -111,4 +141,3 @@ public class RabbitMQConfig {
         return template;
     }
 }
-

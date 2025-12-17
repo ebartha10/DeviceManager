@@ -23,6 +23,28 @@ public class RabbitMQConfig {
     public static final String CHAT_EVENTS_EXCHANGE = "chat.events.exchange";
     public static final String CHAT_MESSAGE_ROUTING_KEY = "chat.message";
 
+    public static final String CHAT_REQUESTS_EXCHANGE = "chat.requests.exchange";
+    public static final String CHAT_REQUEST_ROUTING_KEY = "chat.request";
+    public static final String CHAT_REQUESTS_QUEUE = "chat.requests.queue";
+
+    @Bean
+    public Queue chatRequestsQueue() {
+        return QueueBuilder.durable(CHAT_REQUESTS_QUEUE).build();
+    }
+
+    @Bean
+    public TopicExchange chatRequestsExchange() {
+        return new TopicExchange(CHAT_REQUESTS_EXCHANGE);
+    }
+
+    @Bean
+    public Binding chatRequestsBinding() {
+        return BindingBuilder
+                .bind(chatRequestsQueue())
+                .to(chatRequestsExchange())
+                .with(CHAT_REQUEST_ROUTING_KEY);
+    }
+
     @Bean
     public Queue deviceUserQueue() {
         return QueueBuilder.durable(DEVICE_USER_QUEUE).build();

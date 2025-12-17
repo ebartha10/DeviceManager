@@ -1,6 +1,6 @@
 import { tokenStorage } from "./tokenStorage";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost";
 
 interface RequestOptions extends RequestInit {
   skipAuth?: boolean;

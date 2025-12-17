@@ -2,7 +2,7 @@ import { Client, type Message } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { tokenStorage } from "./tokenStorage";
 
-const WS_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost";
+const WS_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost";
 
 export interface ChatWebSocketMessage {
   ticketId: string;
@@ -10,6 +10,16 @@ export interface ChatWebSocketMessage {
   sender: "user" | "bot" | "admin";
   text: string;
   timestamp: string;
+}
+
+export interface OverconsumptionNotification {
+  deviceId: string;
+  userId: string | null;
+  deviceName: string;
+  currentConsumption: number;
+  threshold: number;
+  timestamp: string;
+  message: string;
 }
 
 export class ChatWebSocketClient {
@@ -26,7 +36,7 @@ export class ChatWebSocketClient {
       const token = tokenStorage.getToken();
       const wsUrl = `${WS_BASE_URL}/ws/chat`;
       const socket = new SockJS(wsUrl);
-      
+
       this.client = new Client({
         webSocketFactory: () => socket as any,
         reconnectDelay: 5000,
@@ -61,13 +71,16 @@ export class ChatWebSocketClient {
       this.connect().then(() => {
         this.subscribeToUserChat(userId, callback);
       });
-      return () => {};
+      return () => { };
     }
 
     const topic = `/topic/chat/${userId}`;
+    console.log("[ChatWebSocketClient] Subscribing to topic:", topic);
     const subscription = this.client.subscribe(topic, (message: Message) => {
       try {
+        console.log("[ChatWebSocketClient] Raw message received on", topic, ":", message.body);
         const data: ChatWebSocketMessage = JSON.parse(message.body);
+        console.log("[ChatWebSocketClient] Parsed message:", data);
         callback(data);
       } catch (error) {
         console.error("Error parsing chat WebSocket message:", error);
@@ -90,7 +103,7 @@ export class ChatWebSocketClient {
       this.connect().then(() => {
         this.subscribeToAdminChat(callback);
       });
-      return () => {};
+      return () => { };
     }
 
     const topic = `/topic/chat/admin`;
@@ -111,6 +124,65 @@ export class ChatWebSocketClient {
     };
   }
 
+  subscribeToDeviceNotifications(
+    deviceId: string,
+    callback: (data: OverconsumptionNotification) => void
+  ): () => void {
+    if (!this.client?.connected) {
+      console.warn("WebSocket not connected for notifications. Please ensure connect() is called first.");
+      return () => { };
+    }
+
+    const topic = `/topic/notifications/device/${deviceId}`;
+    const subscription = this.client.subscribe(topic, (message: Message) => {
+      try {
+        const data: OverconsumptionNotification = JSON.parse(message.body);
+        callback(data);
+      } catch (error) {
+        console.error("Error parsing notification WebSocket message:", error);
+      }
+    });
+
+    this.subscriptions.set(topic, callback);
+
+    return () => {
+      subscription.unsubscribe();
+      this.subscriptions.delete(topic);
+    };
+  }
+
+  sendMessage(userId: string, message: string): void {
+    if (!this.client?.connected) {
+      console.warn("Chat WebSocket not connected, cannot send message");
+      return;
+    }
+
+    this.client.publish({
+      destination: "/app/sendMessage",
+      body: JSON.stringify({
+        userId,
+        message,
+        role: "USER"
+      }),
+    });
+  }
+
+  sendAdminMessage(ticketId: string, message: string): void {
+    if (!this.client?.connected) {
+      console.warn("Chat WebSocket not connected, cannot send admin message");
+      return;
+    }
+
+    this.client.publish({
+      destination: "/app/sendMessage",
+      body: JSON.stringify({
+        ticketId,
+        message,
+        role: "ADMIN"
+      }),
+    });
+  }
+
   disconnect(): void {
     if (this.client) {
       this.client.deactivate();
@@ -125,4 +197,3 @@ export class ChatWebSocketClient {
 }
 
 export const chatWebSocketClient = new ChatWebSocketClient();
-

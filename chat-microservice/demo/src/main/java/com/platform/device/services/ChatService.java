@@ -186,8 +186,9 @@ public class ChatService {
         List<SupportTopicDTO> topics = supportTopicService.getSupportTopics();
         
         for (SupportTopicDTO topic : topics) {
+            String topicLabelLower = topic.getLabel().toLowerCase().trim();
             // Check if message exactly matches the topic label (case-insensitive)
-            if (lowerMsg.equals(topic.getLabel().toLowerCase().trim())) {
+            if (lowerMsg.equals(topicLabelLower)) {
                 return topic.getResponse();
             }
         }
@@ -196,18 +197,22 @@ public class ChatService {
     }
 
     private void publishChatEvent(UUID ticketId, UUID userId, String sender, String message) {
-        ChatEventMessage event = new ChatEventMessage();
-        event.setTicketId(ticketId);
-        event.setUserId(userId);
-        event.setSender(sender);
-        event.setMessage(message);
-        event.setTimestamp(LocalDateTime.now().toString());
-        
-        rabbitTemplate.convertAndSend(
-            RabbitMQConfig.CHAT_EVENTS_EXCHANGE,
-            RabbitMQConfig.CHAT_MESSAGE_ROUTING_KEY,
-            event
-        );
+        try {
+            ChatEventMessage event = new ChatEventMessage();
+            event.setTicketId(ticketId);
+            event.setUserId(userId);
+            event.setSender(sender);
+            event.setMessage(message);
+            event.setTimestamp(LocalDateTime.now().toString());
+            
+            rabbitTemplate.convertAndSend(
+                RabbitMQConfig.CHAT_EVENTS_EXCHANGE,
+                RabbitMQConfig.CHAT_MESSAGE_ROUTING_KEY,
+                event
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private String callGemini(String userMessage) {

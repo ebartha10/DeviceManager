@@ -14,8 +14,7 @@ import java.util.UUID;
 public class ChatEventMessage {
     private UUID ticketId;
     private UUID userId;
-    private String sender; // "user", "bot", "admin"
+    private String sender; // user, bot, admin
     private String message;
     private String timestamp;
 }
-

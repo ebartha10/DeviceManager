@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.ToString
 public class HourlyConsumptionDTO {
     private LocalDateTime hourTimestamp;
     private Double consumption;
 }
-
