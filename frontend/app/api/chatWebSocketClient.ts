@@ -2,7 +2,7 @@ import { Client, type Message } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 import { tokenStorage } from "./tokenStorage";
 
-const WS_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost";
+const WS_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost";
 
 export interface ChatWebSocketMessage {
   ticketId: string;

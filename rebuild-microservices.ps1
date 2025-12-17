@@ -35,9 +35,10 @@ function Build-Microservice {
 #Build-Microservice "auth-microservice" "./auth-microservice/demo" "authmicro2"
 #Build-Microservice "user-microservice" "./user-microservice/demo" "usermicro2"
 #Build-Microservice "device-microservice" "./device-microservice/demo" "devicemicro2"
-Build-Microservice "monitoring-microservice" "./monitoring-microservice/demo" "monitoringmicro2"
-Build-Microservice "chat-microservice" "./chat-microservice/demo" "chatmicro2"
+#Build-Microservice "monitoring-microservice" "./monitoring-microservice/demo" "monitoringmicro2"
+#Build-Microservice "chat-microservice" "./chat-microservice/demo" "chatmicro2"
 Build-Microservice "websocket-microservice" "./websocket-microservice/demo" "websocketmicro2"
+#Build-Microservice "load-balancer" "./load-balancer/demo" "loadbalancer"
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan

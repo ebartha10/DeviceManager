@@ -267,7 +267,7 @@ services:
     deploy:
       replicas: 1
     environment:
-      - VITE_API_BASE_URL=http://localhost
+      - VITE_API_BASE_URL=https://localhost
     labels:
       - "traefik.enable=false"
     networks:
@@ -282,8 +282,6 @@ services:
       - "--api.insecure=true"
       - "--providers.swarm=true"
       - "--providers.swarm.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true"
     ports:
@@ -294,7 +292,7 @@ services:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
       - "./traefik.yml:/etc/traefik/traefik.yml:ro"
       - "./dynamic:/etc/traefik/dynamic:ro" 
-      - "./load-balancer/demo/certs:/etc/traefik/certs:ro" # Certs generated in ./certs but path might be ./certs in root
+      - "./dynamic/certs:/etc/traefik/certs:ro" # Certs generated in ./dynamic/certs
     deploy:
       mode: global
       placement:

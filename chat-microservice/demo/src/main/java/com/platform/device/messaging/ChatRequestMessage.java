@@ -15,7 +15,5 @@ public class ChatRequestMessage {
     private UUID userId;
     private String message;
     private UUID ticketId;
-    private String role; // "USER" or "ADMIN"
+    private String role; // user or admin
 }
-
-

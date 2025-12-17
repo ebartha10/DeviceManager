@@ -27,7 +27,7 @@ public class SupportTicketMessage {
 
     private UUID ticketId;
 
-    private String sender; // "user", "admin", "bot"
+    private String sender; // user, admin, bot
 
     @Column(columnDefinition = "TEXT")
     private String messageContent;

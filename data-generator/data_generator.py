@@ -9,7 +9,7 @@ import pika
 import os
 
 # Configuration
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost")
+API_BASE_URL = os.getenv("API_BASE_URL", "https://localhost")
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", 5672))
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "kalo")
@@ -67,7 +67,7 @@ class DeviceSimulator:
 
 
 def get_devices_from_file():
-    file_path = "device_ids.txt"
+    file_path = "./device_ids.txt"
     devices = []
     
     if not os.path.exists(file_path):
